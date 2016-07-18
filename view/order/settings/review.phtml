@@ -1,0 +1,39 @@
+<div class="board-header" data-require="page/order">
+    <div class="pull-right" style="margin-top:13px;">
+        <button class="btn btn-primary pull-right show-settings" style="width:60px;margin-left:40px;margin-right:10px;"><i class="fa fa-cog" style="margin-right:10px;"></i><i class="fa fa-angle-down"></i></button>
+    </div>
+    <div class="board-header-form pull-right text-nowrap" style="margin-top:13px;">
+        <form action="ajax/order/review/more/0/<?=H($type)?>">
+            <button class="btn btn-default app-q-search-handler pull-right"><i class="fa fa-fw fa-search"></i></button>
+            <input type="text" name="q" class="form-control" style="display:inline-block;width:240px;margin-right:10px;" placeholder="<?= H(T('输入订单编号或者商品名称搜索')) ?>" />
+        </form>
+    </div>
+    <ul class="board-header-ul list-unstyled">
+        <li <?=$type == 'pending' ? 'class="active"' : '' ?>><a href="review/pending"><?= H(T('待审采购')) ?></a></li>
+        <li <?=$type == 'done' ? 'class="active"' : '' ?>><a href="review/done"><?= H(T('审核历史')) ?></a></li>
+        <li <?=$type == 'settings' ? 'class="active"' : '' ?>><a href="review/settings"><?= H(T('化学品监管类别设置')) ?></a></li>
+    </ul>
+</div>
+<div class="board-content board-content-against-right">
+    <div class="board-content-body">
+        <form method="POST">
+            <?php if ($error) { ?>
+                <p class="bg-danger" style="padding:15px;"><?=H($error)?></p>
+            <?php } else if ($success) { ?>
+                <p class="bg-success" style="padding:15px;"><?=H($success)?></p>
+            <?php }?>
+            <div>
+                <?php foreach ((array)$types as $vTypeKey=>$vTypeValue) { ?>
+                    <label class="set-type">
+                        <input type="checkbox" name="types[]" value="<?=H($vTypeKey)?>"<?=in_array($vTypeKey, $checked) ? ' checked="checked"' : ''?> />
+                        <?=H($vTypeValue)?>
+                    </label>
+                <?php }?>
+            </div>
+            <div>
+                <input type="submit" class="btn btn-primary" value="<?=H(T('保存'))?>" />
+                <input type="reset" class="btn btn-default" value="<?=H(T('取消'))?>" />
+            </div>
+        </form>
+    </div>
+</div>

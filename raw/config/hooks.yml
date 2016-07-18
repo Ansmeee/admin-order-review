@@ -1,0 +1,4 @@
+user.is_allowed_to[查看采购审核]:
+- callback:\Gini\Module\AdminOrderReview::commonACL
+user.is_allowed_to[管理权限]:
+- callback:\Gini\Module\AdminOrderReview::commonACL

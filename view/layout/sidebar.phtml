@@ -1,0 +1,23 @@
+<?php
+$checkActive = function($routeCheckings, $exceptCheckings=[]) use($route) {
+    if (in_array($route, $exceptCheckings)) return;
+    foreach ($routeCheckings as $routeChecking) {
+        if (0 == strncmp($routeChecking, $route, strlen($routeChecking))) {
+            return ' class="active"';
+        }
+    }
+};
+$me = _G('ME');
+$group = _G('GROUP');
+?>
+
+<div class="sidebar-menu">
+    <?php if ($me->isAllowedTo('查看采购审核')) { ?>
+    <div class="menu-item">
+        <a href="review" <?= $checkActive(['review'])?>>
+            <i class="fa fa-fw fa-bar-chart"></i>
+            <span><?= H(T('采购审核')) ?></span>
+        </a>
+    </div>
+    <?php } ?>
+</div>

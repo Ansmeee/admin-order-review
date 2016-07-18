@@ -1,0 +1,21 @@
+<div class="modal fade" role="dialog" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog" style="width:400px;">
+        <div class="modal-content">
+            <form method="post" action="ajax/order/review/post">
+                <input type="hidden" name="id" value="<?=H($id)?>"/>
+                <input type="hidden" name="key" value="<?=H($key)?>"/>
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title"><?=H($title)?></h4>
+                </div>
+                <div class="modal-body">
+                    <textarea name="note" placeholder="<?=H(T('您可以在这里填写备注信息'))?>" class="form-control" style="resize:vertical;" rows="5"></textarea>
+                </div>
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal"><?=H(T('取消'))?></button>
+                <button type="button" class="btn btn-primary btn-save app-op-submit-handler"><?=H(T('提交'))?></button>
+            </div>
+        </div>
+    </div>
+</div>

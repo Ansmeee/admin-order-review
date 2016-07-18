@@ -1,0 +1,29 @@
+{
+    "id": "admin-order-Review",
+    "name": "Admin Order Review",
+    "description": "App description...",
+    "version": "0.1.0",
+    "dependencies": {
+        "gapper": ">=0.3.16",
+        "admin-base": "*",
+        "unit-conv": "*",
+        "chem-db-client": "*",
+        "locale": "*",
+        "gini": "*",
+        "debade": "*",
+        "gapper-auth-njust": "*"
+    },
+    "rurl": {
+        "img": "assets/img",
+        "css": "assets/css",
+        "js": "assets/js",
+        "*": "assets"
+    },
+    "composer": {
+        "require": {
+            "tecnickcom/tcpdf": "@stable",
+            "iamfat/wechat": "dev-master",
+            "phpoffice/phpexcel": "@stable"
+        }
+    }
+}

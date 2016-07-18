@@ -1,0 +1,7 @@
+locale: zh_CN
+postmaster:
+  email: ${POSTMASTER_EMAIL}
+  name: ${POSTMASTER_NAME}
+rurl_mod:
+  js:
+    query: '_v=$(VERSION)'

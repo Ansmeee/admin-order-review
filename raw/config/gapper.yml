@@ -1,0 +1,8 @@
+---
+rpc:
+    url: http://192.168.0.5:9130/api
+    client_id: d03fe21f24aa7829cfcb6c4a9f47430eb1c8f4d2
+    client_secret: 2fd31c88044c05ff4ffab1cc847ddc715fd2f82c
+
+server_home: http://192.168.0.5:9130/
+...

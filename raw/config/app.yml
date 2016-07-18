@@ -1,0 +1,15 @@
+---
+title: 南理工化学品管理
+
+node: njust
+debade_secret: 83719730
+rpc:
+  gateway:
+    url: http://192.168.0.5:9122/api
+    client_id: 6dea9a47f5138b5825d86d648dfc1520690b3d12
+    client_secret: cad908a9e1bf90456a074c47841bc9a0bd99a371
+  unitconv:
+    url: http://unit-conv.labmai.com/api
+  chemdb:
+    url: http://chem-db.labmai.com/api
+...
