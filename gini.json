@@ -10,8 +10,7 @@
         "chem-db-client": "*",
         "locale": "*",
         "gini": "*",
-        "debade": "*",
-        "gapper-auth-njust": "*"
+        "debade": "*"
     },
     "rurl": {
         "img": "assets/img",
