@@ -1,0 +1,15 @@
+rpc:
+  default:
+    url: ${MALL_HUB_DEFAULT_API}
+  node:
+    url: ${MALL_HUB_NODE_API}
+  vendor:
+    url: ${MALL_HUB_VENDOR_API}
+  product:
+    url: ${MALL_HUB_PRODUCT_API}
+  order:
+    url: ${MALL_HUB_ORDER_API}
+
+client:
+  id: ${MALL_HUB_CLIENT_ID}
+  secret: ${MALL_HUB_CLIENT_SECRET}
