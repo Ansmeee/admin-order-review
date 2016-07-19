@@ -113,21 +113,4 @@ class Order extends Mall\RObject
         return $rpc->mall->order->getOrder($criteria);
     }
 
-    public function save()
-    {
-        return parent::save();
-        // TODO 
-        $args = func_get_args();
-        $params = $args[0];
-        if (empty($params)) return false;
-        $rpc = self::getRPC('order');
-        $bool = $rpc->mall->order->updateOrder($this->voucher, $params);
-        if ($bool) {
-            $key = $this->name().'#'.$this->id;
-            $cacher = \Gini\Cache::of('orm');
-            $cacher->remove($key);
-        }
-        return !!$bool;
-    }
-
 }

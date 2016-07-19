@@ -27,7 +27,7 @@ abstract class RObject extends \Gini\ORM\Object
             $client = \Gini\Config::get('mall.client');
             $token = $rpc->mall->authorize($client['id'], $client['secret']);
             if (!$token) {
-                \Gini\Logger::of('lab-orders')
+                \Gini\Logger::of('admin-order-review')
                     ->error('Mall\\RObject getRPC: authorization failed with {client_id}/{client_secret} !',
                         [ 'client_id' => $client['id'], 'client_secret' => $client['secret']]);
             }

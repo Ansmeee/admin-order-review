@@ -48,6 +48,7 @@ class Review extends Layout\Board
         $group = _G('GROUP');
         if (!$me->isAllowedTo('管理权限')) return;
 
+        // TODO 这个是不是可配置会比较好
         $types = [
             'hazardous' => T('危险品'),
             'drug_precursor' => T('易制毒'),
@@ -115,12 +116,6 @@ class Review extends Layout\Board
             'order'=> $order,
             'operators'=> $request->getAllowedOperators()
         ]);
-    }
-
-    public function actionLogout()
-    {
-        \Gini\Gapper\Client::logout();
-        $this->redirect('/');
     }
 
 }

@@ -152,7 +152,7 @@ class Review extends \Gini\Controller\CGI
             $request->status = $toStatus;
 
             if ($request->save()) {
-                /* if ($toStatus == \Gini\ORM\Order\Review\Request::STATUS_UNIVERS_PASSED) {
+                if ($toStatus == \Gini\ORM\Order\Review\Request::STATUS_UNIVERS_PASSED) {
                     $bool = $rpc->mall->order->updateOrder($request->voucher, [
                         'status' => \Gini\ORM\Order::STATUS_APPROVED,
                         'mall_description'=> [
@@ -168,7 +168,7 @@ class Review extends \Gini\Controller\CGI
                         throw new \Exception();
                     }
                 }
-                else */if ($toStatus == \Gini\ORM\Order\Review\Request::STATUS_SCHOOL_PASSED) {
+                else if ($toStatus == \Gini\ORM\Order\Review\Request::STATUS_SCHOOL_PASSED) {
                     $bool = $rpc->mall->order->updateOrder($request->voucher, [
                         'status' => \Gini\ORM\Order::STATUS_APPROVED,
                         'mall_description'=> [
