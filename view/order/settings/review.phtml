@@ -1,6 +1,13 @@
 <div class="board-header" data-require="page/order">
     <div class="pull-right" style="margin-top:13px;">
-        <button class="btn btn-primary pull-right show-settings" style="width:60px;margin-left:40px;margin-right:10px;"><i class="fa fa-cog" style="margin-right:10px;"></i><i class="fa fa-angle-down"></i></button>
+        <div class="dropdown" style="margin-left:40px;margin-right:20px;">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <i class="fa fa-cog" style="margin-right:10px;"></i><span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
+                <li class="show-settings text-center" style="cursor:pointer;"><a href="review/settings"><?= H(T('设置化学品监管类别')) ?></a></li>
+            </ul>
+        </div>
     </div>
     <div class="board-header-form pull-right text-nowrap" style="margin-top:13px;">
         <form action="ajax/order/review/more/0/<?=H($type)?>">

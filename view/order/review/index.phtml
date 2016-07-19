@@ -1,6 +1,13 @@
 <div class="board-header" data-require="page/order" id="admin-order-review">
     <div class="pull-right" style="margin-top:13px;">
-        <button class="btn btn-primary pull-right show-settings" style="width:60px;margin-left:40px;margin-right:10px;"><i class="fa fa-cog" style="margin-right:10px;"></i><i class="fa fa-angle-down"></i></button>
+        <div class="dropdown" style="margin-left:40px;margin-right:20px;">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <i class="fa fa-cog" style="margin-right:10px;"></i><span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
+                <li class="show-settings text-center" style="cursor:pointer;"><a href="review/settings"><?= H(T('设置化学品监管类别')) ?></a></li>
+            </ul>
+        </div>
     </div>
     <div class="board-header-form pull-right text-nowrap" style="margin-top:13px;">
         <form action="ajax/order/review/more/0/<?=H($type)?>">
@@ -11,7 +18,7 @@
     <ul class="board-header-ul list-unstyled">
         <li <?=$type == 'pending' ? 'class="active"' : '' ?>><a href="review/pending"><?= H(T('待审采购')) ?></a></li>
         <li <?=$type == 'done' ? 'class="active"' : '' ?>><a href="review/done"><?= H(T('审核历史')) ?></a></li>
-        <li class="show-settings-tab" <?=$type == 'settings' ? 'class="active"' : '' ?>><a href="review/settings"><?= H(T('化学品监管类别设置')) ?></a></li>
+        <li class="show-settings-tab hide" <?=$type == 'settings' ? 'class="active"' : '' ?>><a href="review/settings"><?= H(T('化学品监管类别设置')) ?></a></li>
     </ul>
 </div>
 <div class="board-content">

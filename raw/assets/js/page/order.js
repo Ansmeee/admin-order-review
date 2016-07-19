@@ -60,6 +60,6 @@ define('page/order', ['jquery', 'utils/bootbox', 'board'], function(jQuery, Boot
         });
     }
     $("#admin-order-review").on('click', '.show-settings', function(){
-        $(".show-settings-tab").removeClass('show-settings-tab');
+        $(".show-settings-tab").removeClass('hide');
     });
 });
