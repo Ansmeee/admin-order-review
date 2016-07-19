@@ -1,7 +1,7 @@
 ---
 rpc:
-  url:
+  url: ${TAGDB_API}
 client:
-  id: d03fe21f24aa7829cfcb6c4a9f47430eb1c8f4d2
-  secret: 2fd31c88044c05ff4ffab1cc847ddc715fd2f82c
+  id: ${ORDER_REVIEW_GAPPER_ID}
+  secret: ${ORDER_REVIEW_GAPPER_SECRET}
 ...

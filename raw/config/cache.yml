@@ -2,25 +2,25 @@
 default:
   driver: redis
   options:
-    key_prefix: njust-
+    key_prefix: ${DEFAULT_REDIS_KEY_PREFIX}
     servers:
       default:
-        host: genee-redis.docker.local
-        port: 6379
+        host: ${DEFAULT_REDIS_HOST}
+        port: ${DEFAULT_REDIS_PORT}
 chemdb:
   driver: redis
   options:
-    key_prefix: njust-
+    key_prefix: ${CHEMDB_REDIS_KEY_PREFIX}
     servers:
       default:
-        host: genee-redis.docker.local
-        port: 6379
+        host: ${CHEMDB_REDIS_HOST}
+        port: ${CHEMDB_REDIS_PORT}
 unitconv:
   driver: redis
   options:
-    key_prefix: njust-
+    key_prefix: ${UNITCONV_REDIS_KEY_PREFIX}
     servers:
       default:
-        host: genee-redis.docker.local
-        port: 6379
+        host: ${UNITCONV_REDIS_HOST}
+        port: ${UNITCONV_REDIS_PORT}
 ...

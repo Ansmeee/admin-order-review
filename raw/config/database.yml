@@ -1,11 +1,9 @@
----
 default:
-  dsn: mysql:dbname=admin_order_review;host=zwj-mysql.docker.local;port=3306
-  username: genee
-  password: 83719730
+  dsn: mysql:dbname=${DB_PREFIX}_admin;host=${DB_HOST};port=${DB_PORT}
+  username: ${DB_USER}
+  password: ${DB_PASS}
 
 hazardous: # 用来获取危化品管理员设置的分级审查信息
-  dsn: mysql:dbname=admin_order_review;host=zwj-mysql.docker.local;port=3306
-  username: genee
-  password: 83719730
-...
+  dsn: mysql:dbname=${DB_PREFIX}_admin;host=${DB_HOST};port=${DB_PORT}
+  username: ${DB_USER}
+  password: ${DB_PASS}
