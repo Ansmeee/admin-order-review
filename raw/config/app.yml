@@ -1,5 +1,5 @@
 ---
-title: 南理工化学品管理
+title: ${ADMIN_APP_TITLE}
 
 node: ${MALL_NODE}
 debade_secret: ${DEBADE_SECRET}
