@@ -1,8 +1,8 @@
 ---
 rpc:
     url: ${GAPPER_API}
-    client_id: ${ADMIN_ORDER_REVIEW_GAPPER_ID}
-    client_secret: ${ADMIN_ORDER_REVIEW_GAPPER_SECRET}
+    client_id: ${ORDER_REVIEW_GAPPER_ID}
+    client_secret: ${ORDER_REVIEW_GAPPER_SECRET}
 
 server_home: ${GAPPER_HOME}
 home_app_client: ${GAPPER_HOME_APP_CLIENT}

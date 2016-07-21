@@ -2,6 +2,6 @@
 rpc:
   url: ${TAGDB_API}
 client:
-  id: ${ADMIN_ORDER_REVIEW_GAPPER_ID}
-  secret: ${ADMIN_ORDER_REVIEW_GAPPER_SECRET}
+  id: ${ORDER_REVIEW_GAPPER_ID}
+  secret: ${ORDER_REVIEW_GAPPER_SECRET}
 ...
