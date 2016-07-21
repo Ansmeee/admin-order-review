@@ -46,7 +46,7 @@ class Review extends Layout\Board
     {
         $me = _G('ME');
         $group = _G('GROUP');
-        if (!$me->isAllowedTo('管理权限')) return;
+        if (!$me->isAllowedTo('权限管理')) return;
 
         // TODO 这个是不是可配置会比较好
         $types = [
