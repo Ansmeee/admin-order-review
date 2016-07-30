@@ -61,11 +61,6 @@ class Debade extends \Gini\Controller\API
         $followedStatus = \Gini\ORM\Order::STATUS_NEED_MANAGER_APPROVE;
         if ($status!=$followedStatus) return;
 
-        $organization = self::_getOrganization($node, $data['customer']['id']);
-        $ocode = $organization['code'];
-        $oname = $organization['name'];
-        if (!$ocode || !$oname) return;
-
         $items = (array)$data['items'];
         $needApprove = false;
         $pNames = [];
@@ -96,6 +91,11 @@ class Debade extends \Gini\Controller\API
         ])) {
             return self::_reject($voucher);
         }
+
+        $organization = self::_getOrganization($node, $data['customer']['id']);
+        $ocode = $organization['code'];
+        $oname = $organization['name'];
+        if (!$ocode || !$oname) return;
 
         if (!$request->id) {
             $request->voucher = $voucher;
