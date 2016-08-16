@@ -17,7 +17,7 @@
             <li class="ul-list-li-voucher"><a class="app-link-dialog-handler" href="ajax/review/task/<?=$vID?>"><?=H($vOrder->voucher)?></a></li>
             <li class="ul-list-li-customer" title="<?=H($vOrder->group->title)?>"><?=H($vOrder->group->title)?></li>
             <li class="ul-list-li-vendor" title="<?=H($vOrder->vendor->name)?>"><?=H($vOrder->vendor->name)?></li>
-            <li class="ul-list-li-product<?=$vAllowOperate?'':' ul-list-li-product-strong'?>">
+            <li class="ul-list-li-product ul-list-li-product-strong">
             <?php
             $vItems = (array)$vOrder->items;
             $tmpI = 1;

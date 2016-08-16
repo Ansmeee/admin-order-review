@@ -4,7 +4,7 @@
         <li class="ul-list-li-voucher"><?=H(T('订单编号'))?></li>
         <li class="ul-list-li-customer"><?=H(T('买方'))?></li>
         <li class="ul-list-li-vendor"><?=H(T('供应商'))?></li>
-        <li class="ul-list-li-product"><?=H(T('商品'))?></li>
+        <li class="ul-list-li-product ul-list-li-product-strong"><?=H(T('商品'))?></li>
         <li class="ul-list-li-price"><?=H(T('金额'))?></li>
         <li class="ul-list-li-op"><?=H(T('状态'))?></li>
     </ul>
@@ -21,7 +21,7 @@
             <li class="ul-list-li-voucher"><a class="app-link-dialog-handler" href="ajax/review/instance/<?=$vID?>"><?=H($vOrder->voucher)?></a></li>
             <li class="ul-list-li-customer" title="<?=H($vOrder->group->title)?>"><?=H($vOrder->group->title)?></li>
             <li class="ul-list-li-vendor" title="<?=H($vOrder->vendor->name)?>"><?=H($vOrder->vendor->name)?></li>
-            <li class="ul-list-li-product<?=$vAllowOperate?'':' ul-list-li-product-strong'?>">
+            <li class="ul-list-li-product ul-list-li-product-strong">
             <?php
             $vItems = (array)$vOrder->items;
             $tmpI = 1;
