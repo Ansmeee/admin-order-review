@@ -1,0 +1,15 @@
+<div class="board-header" data-require="page/review" id="admin-order-review">
+    <div class="board-header-form pull-right text-nowrap" style="margin-top:13px;">
+        <form action="ajax/review/more/0/<?=H($type)?>">
+            <button class="btn btn-default app-q-search-handler pull-right"><i class="fa fa-fw fa-search"></i></button>
+            <input type="text" name="q" class="form-control" style="display:inline-block;width:240px;margin-right:10px;" placeholder="<?= H(T('输入订单编号或者商品名称搜索')) ?>" />
+        </form>
+    </div>
+    <ul class="board-header-ul list-unstyled">
+        <li <?=$type == 'pending' ? 'class="active"' : '' ?>><a href="pending"><?= H(T('待审采购')) ?></a></li>
+        <li <?=$type == 'history' ? 'class="active"' : '' ?>><a href="history"><?= H(T('审核历史')) ?></a></li>
+    </ul>
+</div>
+<div class="board-content">
+    <?= \Gini\CGI::request("ajax/review/more/1/{$type}")->execute()->content() ?>
+</div>

@@ -1,0 +1,70 @@
+<div class="board-content-header" style="padding:0 20px;">
+    <ul class="list-unstyled ul-list clearfix<?=$vAllowOperate ? '' : ' ul-list-noop'?>">
+        <li class="ul-list-li-ctime"><?=H(T('时间'))?></li>
+        <li class="ul-list-li-voucher"><?=H(T('订单编号'))?></li>
+        <li class="ul-list-li-customer"><?=H(T('买方'))?></li>
+        <li class="ul-list-li-vendor"><?=H(T('供应商'))?></li>
+        <li class="ul-list-li-product"><?=H(T('商品'))?></li>
+        <li class="ul-list-li-price"><?=H(T('金额'))?></li>
+        <li class="ul-list-li-op"><?=H(T('状态'))?></li>
+    </ul>
+</div>
+<div class="board-content-body">
+    <?php
+        if (count($instances)) foreach ($instances as $vID=>$vObject) {
+            $vOrder = $vObject->order;
+            $vInstnace = $vObject->instance;
+            $vStatus = $vObject->status;
+    ?>
+        <ul class="list-unstyled ul-list clearfix row<?=$vAllowOperate ? '' : ' ul-list-noop'?>">
+            <li class="ul-list-li-ctime"><?=H(date('Y-m-d H:i', strtotime($vOrder->ctime)))?></li>
+            <li class="ul-list-li-voucher"><a class="app-link-dialog-handler" href="ajax/review/instance/<?=$vID?>"><?=H($vOrder->voucher)?></a></li>
+            <li class="ul-list-li-customer" title="<?=H($vOrder->group->title)?>"><?=H($vOrder->group->title)?></li>
+            <li class="ul-list-li-vendor" title="<?=H($vOrder->vendor->name)?>"><?=H($vOrder->vendor->name)?></li>
+            <li class="ul-list-li-product<?=$vAllowOperate?'':' ul-list-li-product-strong'?>">
+            <?php
+            $vItems = (array)$vOrder->items;
+            $tmpI = 1;
+            foreach ((array)$vItems as $vPData) {?>
+                <?php if ($tmpI++>3) { ?>
+                <div>...</div>
+                <?php } else { ?>
+                <div class="text-ellipsis" title="<?=H($vPData['name'])?> * <?=H($vPData['quantity'])?>">
+                    <?php $vCasNO = $vPData['cas_no'];?>
+                    <?php if ($vCasNO && $vTypes=\Gini\ChemDB\Client::getTypes($vCasNO)) {?>
+                        <?php foreach ((array) $vTypes[$vCasNO] as $vHTs) {?>
+                            <?php if (!isset($vTxtTitle[$vHTs])) continue; ?>
+                            <span class="product-type product-type-<?=H($vHTs)?>"><?=H($vTxtTitle[$vHTs])?></span>
+                        <?php }?>
+                    <?php }?>
+                    <?=H($vPData['name'])?> * <?=H($vPData['quantity'])?>
+                </div>
+                <?php }?>
+            <?php }?>
+            </li>
+            <li class="ul-list-li-price"><?=H(money_format('%.2n', $vOrder->price))?></li>
+            <li class="ul-list-li-op">
+                <span class="btn btn-info btn-xs"><?=H($vStatus)?></span>
+            </li>
+        </ul>
+    <?php }?>
+</div>
+
+<ul class="list-unstyled text-center">
+<?php
+    $vPFrom = (ceil($page/10) - 1) * 10 + 1;
+    $vPTo = min(ceil($page/10) * 10 +1, $total);
+    if ($vPT - $vPFrom < 11) {
+        $vPFrom = max(1, $vPTo - 11);
+    }
+?>
+<?php if ($vPFrom!=1) {?>
+    <li data-page="1" data-type="<?=H($type)?>" class="app-pager-li-handler<?=($page==1) ? ' app-pager-li-active' : ''?>"><?=H(T('首页'))?></li>
+<?php }?>
+<?php for ($i=$vPFrom; $i<=$vPTo; $i++) {?>
+    <li data-page="<?=H($i)?>" data-type="<?=H($type)?>" class="app-pager-li-handler<?=($page==$i) ? ' app-pager-li-active' : ''?>"><?=H($i)?></li>
+<?php }?>
+<?php if ($vPTo!=$total) {?>
+    <li data-page="<?=H($total)?>" data-type="<?=H($type)?>" class="app-pager-li-handler<?=($page==$total) ? ' app-pager-li-active' : ''?>"><?=H(T('尾页'))?></li>
+<?php }?>
+</ul>

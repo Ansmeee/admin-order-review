@@ -8,8 +8,28 @@ class Index extends Layout\Board{
         $this->redirect('review');
     }
 
-    public function actionLogout(){
+    public function actionLogout()
+    {
         \Gini\Gapper\Client::logout();
         $this->redirect('/');
     }
+
+    public function actionPending()
+    {
+        $vars = [
+            'type'=> 'pending'
+        ];
+
+        $this->view->body = V('review/index', $vars);
+    }
+
+    public function actionHistory()
+    {
+        $vars = [
+            'type'=> 'history'
+        ];
+
+        $this->view->body = V('review/index', $vars);
+    }
+
 }
