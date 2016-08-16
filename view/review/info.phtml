@@ -1,0 +1,106 @@
+<div class="modal fade">
+    <div class="modal-dialog" style="width:980px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">
+                    <?=H(T('订单#:voucher', [':voucher'=> $order->voucher]))?>
+                    <span class="status-span"><?=\Gini\ORM\Order::$status_title[$order->status]?></span>
+                </h4>
+            </div>
+            <div class="modal-body">
+                <?php
+                $vData = [
+                    [
+                        'title'=> T('供应商'),
+                        'data'=> [
+                            [T('供应商'), $order->vendor->name],
+                        ]
+                    ],
+                    [
+                        'title'=> T('买方信息'),
+                        'data'=> [
+                            [T('买方'), $order->group->title],
+                            [T('买方负责人'), $order->user->name],
+                        ]
+                    ],
+                    [
+                        'title'=> T('送货信息'),
+                        'data'=> [
+                            [T('地址'), $order->address],
+                            [T('邮政编码'), $order->postcode],
+                            [T('电话'), $order->phone],
+                            [T('电子邮箱'), $order->email],
+                        ]
+                    ],
+                ];
+                foreach ($vData as $vD) {
+                ?>
+                <div class="board-info-block">
+                    <div class="board-info-block-title"><?=H($vD['title'])?></div>
+                    <?php foreach ($vD['data'] as $vDI) {?>
+                    <dl>
+                        <dt><?=H($vDI[0])?></dt>
+                        <dd><?=H($vDI[1])?></dd>
+                    </dl>
+                    <?php }?>
+                </div>
+                <?php }?>
+
+                <div class="board-info-block">
+                    <div class="board-info-block-title"><?=H(T('商品清单'))?></div>
+                    <div class="row board-table-row board-table-header" style="">
+                        <div class="col-xs-2"><?=H(T('商品'))?></div>
+                        <div class="col-xs-2"><?=H(T('生产商'))?></div>
+                        <div class="col-xs-1"><?=H(T('货号'))?></div>
+                        <div class="col-xs-2"><?=H(T('包装'))?></div>
+                        <div class="col-xs-2 text-right"><?=H(T('单价'))?></div>
+                        <div class="col-xs-1 text-right"><?=H(T('数量'))?></div>
+                        <div class="col-xs-2 text-right"><?=H(T('金额'))?></div>
+                    </div>
+                    <?php foreach ((array)$order->items as $vItem) { ?>
+                    <div class="row board-table-row board-table-li">
+                        <div class="col col-xs-2">
+                            <?php foreach ((array) $vItem['product_types'] as $vHTs) {?>
+                                <?php if (!isset($vTxtTitle[$vHTs])) continue;?>
+                                <span class="product-type product-type-<?=H($vHTs)?>"><?=H($vTxtTitle[$vHTs])?></span>
+                            <?php }?>
+                            <?=H($vItem['name'])?>
+                        </div>
+                        <div class="col col-xs-2"><?=H($vItem['manufacturer'])?></div>
+                        <div class="col col-xs-1"><?=H($vItem['catalog_no'])?></div>
+                        <div class="col col-xs-2"><?=H($vItem['package'])?></div>
+                        <div class="col col-xs-2 text-right"><?=H(($vItem['unit_price']==-1) ? T('待询价') : money_format('%.2n', $vItem['unit_price']))?></div>
+                        <div class="col col-xs-1 text-right"><?=H($vItem['quantity'])?></div>
+                        <div class="col col-xs-2 text-right"><?=H(($vItem['unit_price']==-1) ? T('待询价') :  money_format('%.2n', $vItem['unit_price'] * $vItem['quantity']))?></div>
+                    </div>
+                    <?php }?>
+                    <div class="board-table-footer text-right row board-table-row">
+                        <?=H(T('合计: :total', [
+                            ':total'=> ($order->price==-1) ? T('待询价') : money_format('%.2n', $order->price)
+                        ]))?>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <?php if (count($operators)) foreach ($operators as $vKey=>$vOp) {?>
+                    <span class="app-op-per-handler btn btn-<?=($vOp['to_status']%2==1) ? 'primary' : 'danger'?>" data-id="<?=H($request->id)?>" data-key="<?=H($vKey)?>"><?=H($vOp['title'])?></span>
+                    <?php }?>
+                </div>
+
+                <?php $vComments = $order->comments;?>
+                <div class="board-info-title">
+                    <div><?=H(T('跟踪信息'))?></div>
+                </div>
+                <ul>
+                <?php foreach ((array)$vComments as $vI=>$vT) {?><li>
+                    <?=H(is_numeric($vT['ctime']) ? date('Y-m-d H:i:s', $vT['ctime']) : $vT['ctime'])?>
+                    <?php if ($vT['content']) {?>
+                        <?= \Michelf\Markdown::defaultTransform(nl2br($vT['content'])); ?>
+                    <?php }?>
+                </li><?php }?>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

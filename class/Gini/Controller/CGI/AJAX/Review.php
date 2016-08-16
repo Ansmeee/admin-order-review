@@ -43,26 +43,8 @@ class Review extends \Gini\Controller\CGI
         foreach ($instances as $instance) {
             $object = new \stdClass();
             $object->instance = $instance;
-
-            $data = $instance->getVariable('data');
-            // TODO 移除测试数据
-            $data = [
-                'id'=> 1,
-                'voucher'=> 'M201608020001',
-                'price'=> round('1000', 2),
-                'ctime'=> date('Y-m-d H:i:s'),
-                'status'=> 1,
-                'group_id'=> 1,
-                'vendor_id'=> 1,
-                'user_id'=> 1,
-                'items'=> []
-            ];
-            $order = a('order');
-            $order->setData($data);
-            $object->order = $order;
-
+            $object->order = $this->_getInstanceObject($instance);
             $object->status = $this->_getInstanceStatus($engine, $instance);
-
             $objects[$instance->id] = $object;
         }
 
@@ -120,22 +102,7 @@ class Review extends \Gini\Controller\CGI
 
         $orders = [];
         foreach ($tasks as $task) {
-            $data = $task->instance->getVariable('data');
-            // TODO 移除测试数据
-            $data = [
-                'id'=> 1,
-                'voucher'=> 'M201608020001',
-                'price'=> round('1000', 2),
-                'ctime'=> date('Y-m-d H:i:s'),
-                'status'=> 1,
-                'group_id'=> 1,
-                'vendor_id'=> 1,
-                'user_id'=> 1,
-                'items'=> []
-            ];
-            $order = a('order');
-            $order->setData($data);
-            $orders[$task->id] = $order;
+            $orders[$task->id] = $this->_getInstanceObject($task->instance);
         }
 
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-tasks', [
@@ -225,15 +192,106 @@ class Review extends \Gini\Controller\CGI
         return [$process, $engine];
     }
 
+    private function _getInstanceObject($instance, $force=false)
+    {
+        $data = $instance->getVariable('data');
+        $id = $data['id'];
+        // TODO 
+        $force = false;
+        if ($force) {
+            $order = a('order', $id);
+        } else {
+            // TODO 移除测试数据
+            $data = [
+                'id'=> 1,
+                'voucher'=> 'M201608020001',
+                'price'=> round('1000', 2),
+                'ctime'=> date('Y-m-d H:i:s'),
+                'status'=> 1,
+                'group_id'=> 1,
+                'vendor_id'=> 1,
+                'user_id'=> 1,
+                'items'=> []
+            ];
+            $order = a('order');
+            $order->setData($data);
+        }
+
+        return $order;
+    }
+
     public function actionInstance($id)
     {
-        var_dump($id);
+        $me = _G('ME');
+        $group = _G('GROUP');
+        if (!$me->id || !$group->id) {
+            return;
+        }
+
+        $processName = \Gini\Config::get('app.order_review_process');
+        $engine = \Gini\Process\Engine::of('default');
+
+        $instance = $engine->fetchProcessInstance($processName, $id);
+        if (!$instance || !$instance->id) return;
+
+        $order = $this->_getInstanceObject($instance, true);
+        if (!$order->id) return;
+        return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
+            'order'=> $order
+        ]));
     }
 
     public function actionTask($id)
     {
-        var_dump($id);
+        $me = _G('ME');
+        $group = _G('GROUP');
+        if (!$me->id || !$group->id) {
+            return;
+        }
+
+        $processName = \Gini\Config::get('app.order_review_process');
+        $engine = \Gini\Process\Engine::of('default');
+
+        $task = $engine->getTask($id);
+        if (!$task || !$task->id) return;
+
+        $order = $this->_getInstanceObject($task->instance, true);
+        if (!$order->id) return;
+        return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
+            'order'=> $order
+        ]));
+    }
+
+    public function actionPreview($instanceID)
+    {
+        $me = _G('ME');
+        $group = _G('GROUP');
+        if (!$me->id || !$group->id) {
+            return;
+        }
+
+        $processName = \Gini\Config::get('app.order_review_process');
+        $engine = \Gini\Process\Engine::of('default');
+        $instance = $engine->fetchProcessInstance($processName, $instanceID);
+        if (!$instance || !$instance->id) return;
+
+        $tasks = $engine->those('task')
+            ->whose('instance')->is($instance)
+            ->whose('status')->isIn([
+                \Gini\Process\ITask::STATUS_APPROVED,
+                \Gini\Process\ITask::STATUS_UNAPPROVED,
+            ])
+            ->orderBy('ctime', 'desc');
+        $data = [];
+        foreach ($tasks as $task) {
+            if ($task->auto_callback) continue;
+            $data[$task->id] = $task;
+        }
+
+        $vars = [
+            'tasks'=> $data
+        ];
+        return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/preview', $vars));
     }
 
 }
-

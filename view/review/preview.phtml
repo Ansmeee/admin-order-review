@@ -1,0 +1,16 @@
+<div class="preview-content">
+<?php if (!count($tasks)) { ?>
+    <div class="row"><div class="col-xs-12">
+        <?=H(T('暂无审核历史'))?>
+    </div></div>
+<?php } else { ?>
+    <ul>
+    <?php foreach ($tasks as $task) { ?>
+        <li>
+            <div><?=H($task->message)?></div>
+            <div><?=H($task->date)?></div>
+        </li>
+    <?php }?>
+    </ul>
+<?php } ?>
+</div>

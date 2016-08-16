@@ -1,4 +1,4 @@
-define('page/review', ['jquery', 'utils/bootbox', 'board'], function(jQuery, Bootbox, Board) {
+define('page/review', ['jquery', 'utils/bootbox', 'board', 'utils/preview'], function(jQuery, Bootbox, Board) {
     $(document).on('click', '.app-op-per-handler', function() {
         var url = 'ajax/review/get-op-form';
         var key = $(this).attr('data-key');
