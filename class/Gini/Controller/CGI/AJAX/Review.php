@@ -195,24 +195,10 @@ class Review extends \Gini\Controller\CGI
     private function _getInstanceObject($instance, $force=false)
     {
         $data = $instance->getVariable('data');
-        $id = $data['id'];
-        // TODO 
-        $force = false;
+        $voucher = $data['voucher'];
         if ($force) {
-            $order = a('order', $id);
+            $order = a('order', ['voucher'=> $voucher]);
         } else {
-            // TODO 移除测试数据
-            $data = [
-                'id'=> 1,
-                'voucher'=> 'M201608020001',
-                'price'=> round('1000', 2),
-                'ctime'=> date('Y-m-d H:i:s'),
-                'status'=> 1,
-                'group_id'=> 1,
-                'vendor_id'=> 1,
-                'user_id'=> 1,
-                'items'=> []
-            ];
             $order = a('order');
             $order->setData($data);
         }

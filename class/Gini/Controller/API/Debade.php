@@ -14,169 +14,54 @@ class Debade extends \Gini\Controller\API
             return;
         }
 
-        $id = $message['id'];
+        $id = strtolower($message['id']);
+        if ($id=='lab-order') {
+            return $this->_getLabOrderNotified($message);
+        }
+    }
+
+    private function _getLabOrderNotified($message)
+    {
+        if (!isset($message['data']['voucher'])) return;
         $data = $message['data'];
-        if (($id !== 'order') || !isset($data['voucher'])) {
-            return;
-        }
-        // {{{
-        // data [
-        //  voucher
-        //  requester && customer && vendor [
-        //      id
-        //      name
-        //  ]
-        //  address
-        //  invoice_title
-        //  phone
-        //  postcode
-        //  email
-        //  note
-        //  status
-        //  payment_status
-        //  deliver_status
-        //  label
-        //  node
-        //  items [
-        //      [
-        //          product
-        //          quantity
-        //          unit_price
-        //          total_price
-        //          deliver_status
-        //          name
-        //          manufacturer
-        //          catalog_no
-        //          package
-        //          cas_no
-        //      ]
-        //  ]
-        // ]
-        // }}}
 
-        $voucher = $data['voucher'];
-        $node = $data['node'];
-        if ($node != \Gini\Config::get('app.node')) return;
-        $status = $data['status'];
-        $followedStatus = \Gini\ORM\Order::STATUS_NEED_MANAGER_APPROVE;
-        if ($status!=$followedStatus) return;
+        if ($data['status']!=\Gini\ORM\Order::STATUS_NEED_MANAGER_APPROVE) return;
 
-        $items = (array)$data['items'];
-        $needApprove = false;
-        $pNames = [];
-        $pCASs = [];
-        foreach ($items as $item) {
-            $pCASs[] = $casNO = $item['cas_no'];
-            $pNames[] = $item['name'];
-            if (self::_isHazPro($casNO)) {
-                $needApprove = true;
-                break;
+        $processName = \Gini\Config::get('app.order_review_process');
+        $engine = \Gini\Process\Engine::of('default');
+
+        $instanceID = $this->_getOrderInstanceID($processName, $data['voucher']);
+
+        if ($instanceID) {
+            $instance = $engine->fetchProcessInstance($processName, $instanceID);
+            if (!$instance->id || $instance->status==\Gini\Process\IInstance::STATUS_END) {
+                $instance = $engine->startProcessInstance($processName, $data);
             }
+        } else {
+            $instance = $engine->startProcessInstance($processName, $data);
         }
 
-        if (!$needApprove) {
-            return self::_approve($voucher);
-        }
-
-        $request = a('order/review/request', ['voucher'=> $voucher]);
-        // 南理工只支持学院一级审核
-        // if ($request->id && $request->status==\Gini\ORM\Order\Review\Request::STATUS_UNIVERS_PASSED) {
-        if ($request->id && $request->status==\Gini\ORM\Order\Review\Request::STATUS_SCHOOL_PASSED) {
-            return self::_approve($voucher);
-        }
-
-        if ($request->id && in_array($request->status, [
-            \Gini\ORM\Order\Review\Request::STATUS_SCHOOL_FAILED,
-            \Gini\ORM\Order\Review\Request::STATUS_UNIVERS_FAILED,
-        ])) {
-            return self::_reject($voucher);
-        }
-
-        $organization = self::_getOrganization($node, $data['customer']['id']);
-        $ocode = $organization['code'];
-        $oname = $organization['name'];
-        if (!$ocode || !$oname) return;
-
-        if (!$request->id) {
-            $request->voucher = $voucher;
-            $request->status = \Gini\ORM\Order\Review\Request::STATUS_PENDING;
-            $request->ctime = date('Y-m-d H:i:s');
-            $request->product_name = implode(',', array_unique($pNames));
-            $request->product_cas_no = implode(',', array_unique($pCASs));
-            $request->organization_code = $ocode;
-            $request->organization_name = $oname;
-            $request->order_items = $items;
-            $request->order_group_title = $data['customer']['name'];
-            $request->order_vendor_name = $data['vendor']['name'];
-            $request->order_price = $data['price'];
-            $request->order_status = $data['status'];
-            $request->save();
+        if ($instance->id && $instance->id!=$instanceID) {
+            $this->_setOrderInstanceID($processName, $data['voucher'], $instance->id);
         }
     }
 
-    private static function _getOrganization($node, $groupID)
+    private function _getOrderInstanceID($processName, $voucher)
     {
-        $conf = \Gini\Config::get('tag-db.rpc');
-        $url = $conf['url'];
-        $client = \Gini\Config::get('tag-db.client');
-        $clientID = $client['id'];
-        $clientSecret = $client['secret'];
-        $rpc = \Gini\IoC::construct('\Gini\RPC', $url);
-        $rpc->tagdb->authorize($clientID, $clientSecret);
-        $tagName = "labmai-{$node}/{$groupID}";
-        $data = $rpc->tagdb->data->get($tagName);
-        $organization = (array)$data['organization'];
-        return $organization;
+        $key = "order#{$voucher}";
+        $info = (array)\Gini\TagDB\Client::of('default')->get($key);
+        //$info = [ 'bpm'=> [ $processName=> [ 'instances'=> [ $instanceID, $latestinstanceid ] ] ] ]
+        $info = (array)@$info['bpm'][$processName]['instances'];
+        return array_pop($info);
     }
 
-    private static function _approve($voucher)
+    private function _setOrderInstanceID($processName, $voucher, $instanceID)
     {
-        $rpc = self::_getRPC('order');
-        $bool = $rpc->mall->order->updateOrder($voucher, [
-            'status' => \Gini\ORM\Order::STATUS_APPROVED,
-        ], [
-            'status' => \Gini\ORM\Order::STATUS_NEED_MANAGER_APPROVE,
-        ]);
-        return $bool;
+        $key = "order#{$voucher}";
+        $info = (array)\Gini\TagDB\Client::of('default')->get($key);
+        $info['bpm'][$processName]['instances'] = @$info['bpm'][$processName]['instances'] ?: [];
+        array_push($info['bpm'][$processName]['instances'], $instanceID);
+        \Gini\TagDB\Client::of('default')->set($key, $info);
     }
 
-    private static function _reject($voucher)
-    {
-        $rpc = self::_getRPC('order');
-        $bool = $rpc->mall->order->updateOrder($voucher, [
-            'status' => \Gini\ORM\Order::STATUS_CANCELED,
-        ], [
-            'status' => \Gini\ORM\Order::STATUS_NEED_MANAGER_APPROVE,
-        ]);
-        return $bool;
-    }
-
-    private static function _isHazPro($casNO)
-    {
-        if (!$casNO) return;
-        return !empty(\Gini\ORM\Product::getHazTypes($casNO));
-    }
-
-    private static $_RPCs = [];
-    private static function _getRPC($type)
-    {
-        $confs = \Gini\Config::get('mall.rpc');
-        if (!isset($confs[$type])) {
-            $type = 'default';
-        }
-        $conf = $confs[$type] ?: [];
-        if (!self::$_RPCs[$type]) {
-            $rpc = \Gini\IoC::construct('\Gini\RPC', $conf['url']);
-            self::$_RPCs[$type] = $rpc;
-            $client = \Gini\Config::get('mall.client');
-            $token = $rpc->mall->authorize($client['id'], $client['secret']);
-            if (!$token) {
-                \Gini\Logger::of(APP_ID)
-                    ->error('Mall\\RObject getRPC: authorization failed with {client_id}/{client_secret} !',
-                        ['client_id' => $client['id'], 'client_secret' => $client['secret']]);
-            }
-        }
-
-        return self::$_RPCs[$type];
-    }
 }

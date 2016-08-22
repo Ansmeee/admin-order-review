@@ -10,6 +10,7 @@
         "chem-db-client": "*",
         "locale": "*",
         "gini": "*",
+        "tag-db-client": "*",
         "debade": "*"
     },
     "rurl": {
