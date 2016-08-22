@@ -174,3 +174,142 @@
 .app-pager-li-active {
     background: @bodyBackgroundColor;
 }
+
+#access-board {
+
+    .permission-group-title {
+        background-color: #f0f4f9;
+        padding: 7px 15px;
+    }
+
+    @permission-card-bg: #f9f9f9;
+    @permission-card-border: #ddd;
+
+    .permission-card {
+
+        background: @permission-card-bg;
+        border-bottom: 3px solid @permission-card-border;
+        margin-bottom: 15px;
+
+        .permission-card-header {
+            position: relative;
+            padding: 10px 15px;
+            border-bottom: 1px solid @permission-card-border;
+
+            .permission-card-title {
+                margin: 0 0 5px;
+            }
+
+            .permission-card-description {
+                margin: 0;
+                font-size: 90%;
+                color: @text-muted;
+            }
+
+        }
+
+        .permission-card-body {
+            min-height: 40px;
+            padding: 10px 15px;
+            width: 100%;
+
+            dd {
+                float: left;
+                margin-right: 3px;
+            }
+
+            &.drag-hover {
+                background-color: darken(@permission-card-bg, 5%);
+            }
+        }
+
+
+        .permission-user  {
+            display: inline-block;
+            padding: 0 5px;
+            border-radius: 2px;
+
+            background-color: @label-primary-bg;
+            color: #fff;
+
+            margin-bottom:3px;
+            cursor: default;
+
+            .delete-member {
+                cursor: pointer;
+            }
+        }
+
+    }
+
+    .permission-cards {
+        margin-right: 288px;
+        padding: 15px;
+    }
+
+    .access-members {
+        position: absolute;
+        width: 288px;
+        right: 0; top: 0; bottom: 0;
+        height: 100%;
+        border-left: 1px solid #ccc;
+        padding: 58px 20px 20px;
+        min-height: 440px;
+        background: #F1F2F6;
+    }
+
+    /*放在layout下面，为了拖拽的元素的样式*/
+    .user-icon {
+        display: inline-block;
+        z-index: 50;
+        text-decoration: none;
+        width: 80px;
+        margin-bottom: 10px;
+
+        .user-icon-image {
+            width: 64px;
+            height: 64px;
+            max-width: 100%;
+            margin:0 auto 5px;
+
+            img {
+                background-color: #fff;
+                display:block;
+                width: 64px;
+                height: 64px;
+                border-radius:50%;
+                border: 2px solid #fff;
+            }
+
+            .user-icon-text {
+                color: #fff;
+                background-color: #666;
+                width: 64px;
+                height: 64px;
+                line-height: 64px;
+                font-weight: @bold;
+                border-radius:50%;
+                white-space: nowrap;
+                overflow: hidden;
+                text-align: center;
+                border: 2px solid #fff;
+            }
+        }
+
+        .user-name {
+            color: #000;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .user-group {
+            font-size: 12px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+    }
+
+}

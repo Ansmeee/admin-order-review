@@ -1,0 +1,23 @@
+<?php
+if (count($members) == 0) { ?>
+    <div data-more="-1"></div>
+<?php } else { ?>
+    <?php foreach ($members as $member) { ?>
+    <div class="user-icon pull-left" data-id="<?=H($member->id)?>" data-name="<?= H($member->name) ?>">
+        <?php $u = parse_url($member->icon); ?>
+        <?php if ($u['scheme'] == 'initials') { ?>
+            <div class="user-icon-image text-center">
+                <div class="user-icon-text"><?= H($u['host'])?></div>
+            </div>
+        <?php } else { ?>
+            <div class="user-icon-image text-center">
+                <img src="<?= H($member->icon(64)) ?>" data-retina-src="<?= H($member->icon(128)) ?>" width="64"/>
+            </div>
+        <?php } ?>
+        <div title="<?=H($member->name) ?>" class="user-name nowrap text-center">
+            <?= H($member->name) ?>
+        </div>
+    </div>
+    <?php } ?>
+    <div data-more="<?= intval($next_start) ?>"></div>
+<?php }

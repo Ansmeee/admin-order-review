@@ -1,0 +1,8 @@
+<?php foreach ($members as $member) { 
+    if (!$member->name) continue; 
+?>
+<dd class="permission-user" data-id="<?= H($member->id) ?>">
+  <?= H($member->name) ?>
+  <i class="fa fa-times delete-member"></i>
+</dd>
+<?php } ?>

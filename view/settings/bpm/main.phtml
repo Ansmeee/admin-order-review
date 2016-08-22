@@ -1,0 +1,162 @@
+<div id="access-board">
+  <div class="permission-cards">
+    <div class="permission-group">
+        <div class="row permission-group-body">
+            <div class="column col-xs-6">
+            <?php foreach ($groups as $vGroup) { ?>
+                <?=V('settings/bpm/permission-card', [ 'group'=> $vGroup])?>
+            <?php } ?>
+            </div>
+            <div class="column col-xs-6">
+            </div>
+        </div>
+    </div>
+  </div>
+  <div class="access-members">
+    <div class="search-form">
+        <h4><?=H(T('成员列表'))?></h4>
+        <div class="search-bar form-group">
+            <form method="POST">
+            <div class="input-group-unity input-group-unity-right">
+                <input type="text" class="form-control" name="q" value="<?= H($form['q']) ?>">
+                <span class="input-group-btn">
+                    <button type="submit" class="btn btn-default btn-search-members"><i class="fa fa-fw fa-search"></i></button>
+                </span>
+            </div>
+            </form>
+        </div>
+    </div>
+    <div class="search-results">
+        <div class="loading text-center">
+            <i class="fa fa-2x fa-spinner fa-spin"></i>
+        </div>
+    </div>
+  </div>
+</div>
+<script>
+require(['jquery', 'more', 'url'], function($, More, U){
+
+    var form = <?= J((object)$form) ?>;
+
+    var $container = $('#access-board .access-members'); 
+    var $bar = $container.find('.search-bar');
+    var $results = $container.find('.search-results');
+
+    $results.data('criteria', form);
+
+    var more = new More({
+        start: 0,
+        root: $results,
+        url: function() { return 'ajax/settings/bpm/more-members/' + this.start },
+        data: function(){
+            return $results.data('criteria');
+        }
+    });
+    
+    function _refresh() {
+        U.changeURL(U.modifyURL(null, form));
+        more.reload();
+    }
+
+    $bar.find('form').submit(function() {
+        form['q']=$(this).find('[name="q"]').val();
+        _refresh();
+        return false;
+    });
+
+});
+
+require(['jquery', 'utils/dragdrop'], function($) {
+
+	var listUserDraggableOpts = {
+        helper: 'clone',
+		revert: false,
+		containment: '#access-board',
+		scroll: true,
+		refreshPositions: true
+	};
+
+    var $board = $('#access-board');
+
+    var $results = $board.find('.access-members .search-results');
+    $results.on('load.more', function(){
+    	$results.find('.user-icon').draggable(listUserDraggableOpts);
+    });
+
+	$board.find('.permission-card-body').droppable({
+		accept: '.user-icon',
+		activeClass: 'drag-active',
+		hoverClass: 'drag-hover',
+		drop: function(evt, ui) {
+			var $ele = $(ui.helper);
+			var id = $ele.data('id');
+			var name = $ele.data('name');
+
+			$ele = $('<dd class="permission-user"/>');
+			var $del = $('<i class="fa fa-times delete-member"/>');
+
+			$ele.text(name + " ");
+			$ele.append($del);
+
+			$ele.data('id', id);
+			$ele.data('name', name);
+            
+            var $body = $(this);
+            var $card = $body.parents('.permission-card');
+            
+            // ajax 操作
+            $.post('ajax/settings/bpm/add-user/' + $card.data('permission'), {
+                id: id
+            }).done(function(data) {
+                if (data === true) {
+                    $body.append($ele);
+                    // _relayout($card.parents('.permission-group-body'));
+                }
+                else {
+                    $ele.remove();
+                }
+            }).fail(function() {
+                $ele.remove();
+            });
+		}
+	});
+    
+    $board.on('click', '.permission-card-body .delete-member', function(){
+        var $button = $(this);
+        var $user = $button.parents('.permission-user');
+        var $card = $button.parents('.permission-card');
+        // ajax 操作
+        $.post('ajax/settings/bpm/remove-user/' + $card.data('permission'), {
+            id: $user.data('id')
+        }).done(function(data) {
+            if (data === true) {
+                $user.remove();
+                // _relayout($card.parents('.permission-group-body'));
+            }
+        });
+	});
+    
+    var _relayout = function($group) {
+        
+        $group.each(function(){
+            var $self = $(this);
+            
+            var $columns = $self.children('.column');
+            var $cards = $self.find('.permission-card');
+            
+            $cards.detach();
+            
+            $cards.each(function(){
+                $(this).appendTo($columns[0]);
+                $columns.sort(function(a, b){
+                    return $(a).height() - $(b).height();
+                });
+            })
+        });
+    };
+    
+    _relayout($board.find('.permission-group-body'));
+
+});
+
+</script>

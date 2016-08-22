@@ -1,0 +1,13 @@
+<div class="permission-card" data-permission="<?= H($group->name) ?>">
+    <div class="permission-card-header">
+        <h5 class="permission-card-title">
+            <?= H($group->title) ?>
+        </h5>
+        <p class="permission-card-description">
+            <?= H($group->description)?>
+        </p>
+    </div>
+    <div class="permission-card-body clearfix">
+        <?= V('settings/bpm/permission-card-members', [ 'members' => $group->getUsers() ]) ?>
+    </div>
+</div>

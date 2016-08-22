@@ -1,9 +1,10 @@
-<div class="board-header" data-require="page/review" id="admin-order-review">
+<div class="board-header">
     <ul class="board-header-ul list-unstyled">
         <li <?=$type == 'pending' ? 'class="active"' : '' ?>><a href="pending"><?= H(T('待审采购')) ?></a></li>
         <li <?=$type == 'history' ? 'class="active"' : '' ?>><a href="history"><?= H(T('审核历史')) ?></a></li>
+        <li <?=$type == 'manager' ? 'class="active"' : '' ?>><a href="manager"><?= H(T('审核历史')) ?></a></li>
     </ul>
 </div>
 <div class="board-content">
-    <?= \Gini\CGI::request("ajax/review/more/1/{$type}")->execute()->content() ?>
+	<?=V('settings/bpm/main', $data)?>
 </div>
