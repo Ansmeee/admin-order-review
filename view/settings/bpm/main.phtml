@@ -20,7 +20,7 @@
             <div class="input-group-unity input-group-unity-right">
                 <input type="text" class="form-control" name="q" value="<?= H($form['q']) ?>">
                 <span class="input-group-btn">
-                    <button type="submit" class="btn btn-default btn-search-members"><i class="fa fa-fw fa-search"></i></button>
+                    <button type="submit" class="btn btn-default btn-search-members app-add-member-refresh-handler"><i class="fa fa-fw fa-search"></i></button>
                 </span>
             </div>
             </form>
@@ -29,6 +29,14 @@
     <div class="search-results">
         <div class="loading text-center">
             <i class="fa fa-2x fa-spinner fa-spin"></i>
+        </div>
+        <div class="user-icon pull-left app-add-member-handler" style="cursor:pointer;" data-require="gapper/client/add-member">
+            <div class="user-icon-image text-center">
+                <div class="user-icon-text" style="line-height:55px;background-color:#aaa">
+                    <span style="font-size:40px;color:#eb5767">+</span>
+                </div>
+            </div>
+            <div class="nowrap text-center"><?=H(T('添加成员'))?></div>
         </div>
     </div>
   </div>
@@ -41,6 +49,7 @@ require(['jquery', 'more', 'url'], function($, More, U){
     var $container = $('#access-board .access-members'); 
     var $bar = $container.find('.search-bar');
     var $results = $container.find('.search-results');
+    var $addHandler = $('.app-add-member-handler');
 
     $results.data('criteria', form);
 
@@ -50,6 +59,9 @@ require(['jquery', 'more', 'url'], function($, More, U){
         url: function() { return 'ajax/settings/bpm/more-members/' + this.start },
         data: function(){
             return $results.data('criteria');
+        },
+        after: function() {
+            $addHandler.length && $results.append($addHandler);
         }
     });
     
