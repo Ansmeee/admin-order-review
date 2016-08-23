@@ -311,5 +311,51 @@
         }
 
     }
+}
 
+.status-line {
+    padding-left: 20px;
+    position: relative;
+    &-content {
+        border-left: 2px solid #999;
+        padding-left: 10px;
+        padding-right: 10px;
+        margin-top: 0;
+        margin-bottom: 0;
+        dt {
+            line-height: 30px;
+        }
+        &-li {
+            font-size: 12px;
+            color: #999;
+            line-height: 22px;
+            &:before {
+                content: ' ';
+                display: inline-block;
+                background: #999;
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                position: absolute;
+                left: 17px;
+                margin-top: 6px;
+            }
+            &-0 {
+                &:before {
+                    background: #d55;
+                }
+            }
+            b {
+                color: #000;
+                font-weight: @bold;
+                margin-left: 10px;
+            }
+
+            .track-content {
+                p {
+                    display: inline;
+                }
+            }
+        }
+    }
 }
