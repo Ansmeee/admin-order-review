@@ -80,10 +80,28 @@ require(['jquery', 'more', 'url'], function($, More, U){
 
 require(['jquery', 'utils/dragdrop'], function($) {
 
+	var getHelper = function(evt) {
+		var $ele = $(evt.target);
+		$ele = $ele.parents('.user-icon');
+
+		var id = $ele.data('id');
+		var name = $ele.data('name');
+		$ele = $ele.clone();
+		$ele.find('.user-name').remove();
+
+		$ele.data('id', id);
+		$ele.data('name', name);
+
+		$ele.appendTo($('#access-board'));
+
+		return $ele;
+	};
+
 	var listUserDraggableOpts = {
-        helper: 'clone',
+		helper: getHelper,
+		appendTo: 'body',
 		revert: false,
-		containment: '#access-board',
+		containment: '#board',
 		scroll: true,
 		refreshPositions: true
 	};
