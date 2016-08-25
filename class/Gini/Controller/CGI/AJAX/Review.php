@@ -27,17 +27,20 @@ class Review extends \Gini\Controller\CGI
     private function _showMoreInstance($page, $querystring=null)
     {
         $me = _G('ME');
+        $group = _G('GROUP');
         $limit = 25;
         $start = ($page - 1) * $limit;
 
         list($process, $engine) = $this->_getProcessEngine();
         if (!$process->id) return;
 
-        $instances = $process->getInstances($start, $limit, $me);
+        $user = $me->isAllowedTo('管理权限') ? null : $me;
+
+        $instances = $process->getInstances($start, $limit, $user);
         if (!count($instances)) {
             return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
         }
-        $totalCount = $process->searchInstances($me);
+        $totalCount = $process->searchInstances($user);
 
         $objects = [];
         foreach ($instances as $instance) {
