@@ -65,23 +65,52 @@ class Review extends \Gini\Controller\CGI
             return T('已结束');
         }
 
-        $tasks = $engine->those('task')
+        $task = $engine->those('task')
                 ->whose('instance')->is($instance)
                 ->orderBy('ctime', 'desc')
-                ->orderBy('id', 'desc');
-        while (true) {
-            $task = $tasks->current();
-            if ($task->auto_callback) {
-                $tasks->next();
-                continue;
+                ->orderBy('id', 'desc')->current();
+
+        if (!$task->id) return T('正在初始化');
+
+        if ($task->auto_callback) {
+            switch ($task->status) {
+            case \Gini\Process\ITask::STATUS_PENDING:
+                return T('等待系统自动审批');
+                break;
+            case \Gini\Process\ITask::STATUS_RUNNING:
+                return T('系统正在自动审批');
+                break;
+            case \Gini\Process\ITask::STATUS_APPROVED:
+                return T('系统自动审批通过');
+                break;
+            case \Gini\Process\ITask::STATUS_UNAPPROVED:
+                return T('系统自动拒绝');
+                break;
             }
-            if (!$task->id) break;
-            $status_title = T('待 :group 审批', [
-                ':group'=> $task->candidate_group->title
-            ]);
-            break;
+        } else {
+            switch ($task->status) {
+            case \Gini\Process\ITask::STATUS_PENDING:
+                return T('等待 :group 审批', [
+                    ':group'=> $task->candidate_group->title
+                ]);
+                break;
+            case \Gini\Process\ITask::STATUS_RUNNING:
+                return T(':group 正在审批', [
+                    ':group'=> $task->candidate_group->title
+                ]);
+                break;
+            case \Gini\Process\ITask::STATUS_APPROVED:
+                return T(':group 审批通过', [
+                    ':group'=> $task->candidate_group->title
+                ]);
+                break;
+            case \Gini\Process\ITask::STATUS_UNAPPROVED:
+                return T('被 :group 拒绝', [
+                    ':group'=> $task->candidate_group->title
+                ]);
+                break;
+            }
         }
-        return $status_title ?: T('正在初始化');
     }
 
     private function _showMoreTask($page, $querystring=null)
@@ -195,18 +224,12 @@ class Review extends \Gini\Controller\CGI
         return [$process, $engine];
     }
 
-    private function _getInstanceObject($instance, $force=false)
+    private function _getInstanceObject($instance)
     {
         $data = $instance->getVariable('data');
-        // TODO 移除测试数据
-        $force = false;
         $voucher = $data['voucher'];
-        if ($force) {
-            $order = a('order', ['voucher'=> $voucher]);
-        } else {
-            $order = a('order');
-            $order->setData($data);
-        }
+        $order = a('order');
+        $order->setData($data);
 
         return $order;
     }
@@ -225,7 +248,7 @@ class Review extends \Gini\Controller\CGI
         $instance = $engine->fetchProcessInstance($processName, $id);
         if (!$instance || !$instance->id) return;
 
-        $order = $this->_getInstanceObject($instance, true);
+        $order = $this->_getInstanceObject($instance);
         if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
             'order'=> $order
@@ -246,7 +269,7 @@ class Review extends \Gini\Controller\CGI
         $task = $engine->getTask($id);
         if (!$task || !$task->id) return;
 
-        $order = $this->_getInstanceObject($task->instance, true);
+        $order = $this->_getInstanceObject($task->instance);
         if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
             'order'=> $order
@@ -275,7 +298,6 @@ class Review extends \Gini\Controller\CGI
             ->orderBy('ctime', 'desc');
         $data = [];
         foreach ($tasks as $task) {
-            if ($task->auto_callback) continue;
             $data[$task->id] = $task;
         }
 

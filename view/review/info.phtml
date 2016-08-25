@@ -87,19 +87,6 @@
                     <span class="app-op-per-handler btn btn-<?=($vOp['to_status']%2==1) ? 'primary' : 'danger'?>" data-id="<?=H($request->id)?>" data-key="<?=H($vKey)?>"><?=H($vOp['title'])?></span>
                     <?php }?>
                 </div>
-
-                <?php $vComments = $order->comments;?>
-                <div class="board-info-title">
-                    <div><?=H(T('跟踪信息'))?></div>
-                </div>
-                <ul>
-                <?php foreach ((array)$vComments as $vI=>$vT) {?><li>
-                    <?=H(is_numeric($vT['ctime']) ? date('Y-m-d H:i:s', $vT['ctime']) : $vT['ctime'])?>
-                    <?php if ($vT['content']) {?>
-                        <?= \Michelf\Markdown::defaultTransform(nl2br($vT['content'])); ?>
-                    <?php }?>
-                </li><?php }?>
-                </ul>
             </div>
         </div>
     </div>
