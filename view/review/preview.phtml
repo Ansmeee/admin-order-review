@@ -10,7 +10,7 @@
     <?php foreach ($tasks as $task) { ?>
         <dd class="status-line-content-li">
             <div title="<?=H($task->message)?>"><?=H($task->message)?></div>
-            <div><?=H($task->date)?></div>
+            <div><?=H($task->date?:$task->auto_approve_date?:$task->auto_reject_date)?></div>
         </dd>
     <?php }?>
     </dl>
