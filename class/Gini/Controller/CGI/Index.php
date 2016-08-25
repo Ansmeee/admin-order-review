@@ -5,7 +5,7 @@ namespace Gini\Controller\CGI;
 class Index extends Layout\Board{
 
     public function __index(){
-        $this->redirect('review');
+        $this->redirect('pending');
     }
 
     public function actionLogout()
