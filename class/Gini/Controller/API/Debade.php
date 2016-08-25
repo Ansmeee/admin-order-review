@@ -35,10 +35,10 @@ class Debade extends \Gini\Controller\API
         if ($instanceID) {
             $instance = $engine->fetchProcessInstance($processName, $instanceID);
             if (!$instance->id || $instance->status==\Gini\Process\IInstance::STATUS_END) {
-                $instance = $engine->startProcessInstance($processName, $data);
+                $instance = $engine->startProcessInstance($processName, $message);
             }
         } else {
-            $instance = $engine->startProcessInstance($processName, $data);
+            $instance = $engine->startProcessInstance($processName, $message);
         }
 
         if ($instance->id && $instance->id!=$instanceID) {
