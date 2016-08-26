@@ -126,6 +126,7 @@ class Review extends \Gini\Controller\CGI
             ->whose('process')->is($process)
             ->whose('candidate_group')->isIn($process->getGroups($me))
             ->whose('status')->is(\Gini\Process\ITask::STATUS_PENDING)
+            ->orderBy('id', 'desc')
             ->limit($start, $limit);
 
         if (!count($tasks)) {
