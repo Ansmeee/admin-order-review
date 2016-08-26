@@ -75,10 +75,10 @@ class Review extends \Gini\Controller\CGI
         if ($task->auto_callback) {
             switch ($task->status) {
             case \Gini\Process\ITask::STATUS_PENDING:
-                return T('等待系统自动审批');
+                return T('系统处理中');
                 break;
             case \Gini\Process\ITask::STATUS_RUNNING:
-                return T('系统正在自动审批');
+                return T('系统处理中');
                 break;
             case \Gini\Process\ITask::STATUS_APPROVED:
                 return T('系统自动审批通过');

@@ -10,7 +10,11 @@
     <?php foreach ($tasks as $task) { ?>
         <dd class="status-line-content-li">
             <div title="<?=H($task->message)?>"><?=H($task->message)?></div>
-            <div><?=H($task->date?:$task->auto_approve_date?:$task->auto_reject_date)?></div>
+            <div><?=H(T(':group:user:date', [
+                ':group'=> $task->group ? $task->group . ' ' : '',
+                ':user'=> $task->user ? $task->user. ' ' : '',
+                ':date'=> $task->date?:$task->auto_approve_date?:$task->auto_reject_date
+            ]))?></div>
         </dd>
     <?php }?>
     </dl>
