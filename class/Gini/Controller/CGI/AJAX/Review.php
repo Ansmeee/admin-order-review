@@ -227,7 +227,6 @@ class Review extends \Gini\Controller\CGI
     private function _getInstanceObject($instance)
     {
         $data = $instance->getVariable('data');
-        $voucher = $data['voucher'];
         $order = a('order');
         $order->setData($data);
 
