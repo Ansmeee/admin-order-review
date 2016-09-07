@@ -1,5 +1,9 @@
 <div class="permission-card" data-permission="<?= H($group->name) ?>">
     <div class="permission-card-header">
+        <div class="pull-right">
+            <span class="fa fa-pencil-square-o permission-card-group-edit-handler"></span>
+            <span class="fa fa-trash permission-card-group-remove-handler"></span>
+        </div>
         <h5 class="permission-card-title">
             <?= H($group->title) ?>
         </h5>

@@ -1,0 +1,40 @@
+<div class="modal fade" role="dialog" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog" style="width:400px;">
+        <div class="modal-content">
+            <form method="post" class="form-permission-card-group-edit">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title"><?=H($group->id ? T('修改组') : T('添加组'))?></h4>
+                </div>
+                <div class="modal-body" style="padding: 20px 40px;">
+                    <div class="row form-group<?=empty($errors['name'])?'':' has-error'?>">
+                        <label class="control-label"><?=H(T('分组标识'))?></label>
+                        <input type="text" name="name" class="form-control" value="<?=H(isset($form['name']) ? $form['name'] : ($group->id?$group->name:''))?>"/>
+                        <?php if (!empty($errors['name'])) {?>
+                        <div class="text-danger"><?=H($errors['name'])?></div>
+                        <?php }?>
+                    </div>
+                    <div class="row form-group<?=empty($errors['title'])?'':' has-error'?>">
+                        <label class="control-label"><?=H(T('分组名称'))?></label>
+                        <input type="text" name="title" class="form-control" value="<?=H(isset($form['title']) ? $form['title'] : ($group->id?$group->title:''))?>"/>
+                        <?php if (!empty($errors['title'])) {?>
+                        <div class="text-danger"><?=H($errors['title'])?></div>
+                        <?php }?>
+                    </div>
+                    <div class="row form-group<?=empty($errors['description'])?'':' has-error'?>">
+                        <label class="control-label"><?=H(T('分组描述'))?></label>
+                        <input type="text" name="description" class="form-control" value="<?=H(isset($form['description']) ? $form['description'] : ($group->id?$group->description:''))?>"/>
+                        <?php if (!empty($errors['description'])) {?>
+                        <div class="text-danger"><?=H($errors['description'])?></div>
+                        <?php }?>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal"><?=H(T('取消'))?></button>
+                    <button type="submit" class="btn btn-primary"><?=H(T('提交'))?></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
