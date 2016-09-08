@@ -1,15 +1,21 @@
+<?php $me = _G('ME');?>
 <div id="access-board">
   <div class="permission-cards">
     <div class="permission-group">
-        <div class="row permission-group-body">
-            <div class="column col-xs-6">
-            <?php foreach ($groups as $vGroup) { ?>
-                <?=V('settings/bpm/permission-card', [ 'group'=> $vGroup])?>
+        <?php if (count($groups)) {?>
+            <div class="row permission-group-body">
+            <?php foreach ($groups as $vI=>$vGroup) { ?>
+                <div class="column col-xs-6">
+                    <?=V('settings/bpm/permission-card', ['group'=> $vGroup])?>
+                </div>
+            <?php } ?>
+            <?php if ($me->isAllowedTo('管理权限')) {?>
+                <div class="column col-xs-6">
+                    <h4 class="permission-card-group-add-handler" style="cursor:pointer;background-color:#f9f9f9;text-align:center; height:102px;line-height:102px;overflow:hidden;padding:0;margin:0;"><span class="fa fa-plus"></span></h4>
+                </div>
             <?php } ?>
             </div>
-            <div class="column col-xs-6">
-            </div>
-        </div>
+        <?php } ?>
     </div>
   </div>
   <div class="access-members">
@@ -76,6 +82,86 @@ require(['jquery', 'more', 'url'], function($, More, U){
         return false;
     });
 
+});
+
+require(['jquery', 'bootstrap', 'bootbox'], function($, Bootstrap, Bootbox) {
+    var $groupFormModal;
+    function hideGroupFormModal($modal)
+    {
+        $groupFormModal && $groupFormModal.hide();
+        $groupFormModal = $modal;
+        $groupFormModal.modal({
+            show: true,
+            backdrop: 'static'
+        });
+    }
+    $(document).on('submit', 'form.form-permission-card-group-edit', function() {
+        var url = 'ajax/settings/bpm/submit-group';
+        $.post(url, $(this).serialize(), function(data) {
+            if (true===data) {
+                window.location.reload();
+                return;
+            }
+            if (data) {
+                if ($(data).hasClass('modal')) {
+                    hideGroupFormModal($(data));
+                } else {
+                    Bootbox.alert(data);
+                }
+            }
+        });
+        return false;
+    });
+    $(document).on('click', '.permission-card-group-add-handler', function() {
+        var url = 'ajax/settings/bpm/add-group';
+        $.get(url, {
+            _t: (new Date()).getTime()
+        }, function(data) {
+            if (!data) return;
+            hideGroupFormModal($(data));
+        });
+        return false;
+    });
+    $(document).on('click', '.permission-card-group-edit-handler', function() {
+        var $element = $(this);
+        var $card = $element.parents('.permission-card');
+        var group = $card.attr('data-permission');
+        var url = 'ajax/settings/bpm/edit-group';
+        $.get(url, {
+            _t: (new Date()).getTime(),
+            group: group
+        }, function(data) {
+            if (!data) return;
+            hideGroupFormModal($(data));
+        });
+        return false;
+    });
+    $(document).on('click', '.permission-card-group-remove-handler', function() {
+        var $element = $(this);
+        var $card = $element.parents('.permission-card');
+        var group = $card.attr('data-permission');
+        var title = $card.find('.permission-card-title').text();
+        var url = 'ajax/settings/bpm/remove-group';
+        Bootbox.confirm([
+            <?=J(T('你确定要删除?'))?>,
+            title
+        ].join(''), function(result) {
+            if (!result) return;
+            $.post(url, {
+                group: group
+            }, function(result) {
+                if (true===result) {
+                    window.location.reload();
+                    return;
+                }
+                if (result) {
+                    Bootbox.alert(result);
+                    return;
+                }
+            });
+        });
+        return false;
+    });
 });
 
 require(['jquery', 'utils/dragdrop'], function($) {

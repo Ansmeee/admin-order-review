@@ -86,4 +86,114 @@ class BPM extends \Gini\Controller\CGI
         return \Gini\IoC::construct('\Gini\CGI\Response\JSON', $success);
     }
 
+    public function actionRemoveGroup()
+    {
+        $group = _G('GROUP');
+        $me = _G('ME');
+        if (!$group->id || !$me->isAllowedTo('管理权限')) {
+            return false;
+        }
+
+        $post = $this->form('post');
+        if (!isset($post['group'])) return false;
+
+        $engine = \Gini\Process\Engine::of('default');
+        $processName = \Gini\Config::get('app.order_review_process');
+
+        $process = $engine->getProcess($processName);
+
+        $name = $post['group'];
+
+        $success = $process->removeGroup($name);
+
+        return \Gini\IoC::construct('\Gini\CGI\Response\JSON', $success ? true : T('操作失败, 请重试'));
+    }
+
+    public function actionAddGroup()
+    {
+        $group = _G('GROUP');
+        $me = _G('ME');
+        if (!$group->id || !$me->isAllowedTo('管理权限')) {
+            return false;
+        }
+
+        return self::_showEditGroupForm();
+    }
+
+    public function actionEditGroup()
+    {
+        $group = _G('GROUP');
+        $me = _G('ME');
+        if (!$group->id || !$me->isAllowedTo('管理权限')) {
+            return false;
+        }
+        $get = $this->form('get');
+        if (!isset($get['group'])) return false;
+
+        $engine = \Gini\Process\Engine::of('default');
+        $processName = \Gini\Config::get('app.order_review_process');
+
+        $process = $engine->getProcess($processName);
+
+        $group  = $process->getGroup($get['group']);
+        if (!$group->id) return false;
+        return self::_showEditGroupForm([
+            'group'=> $group
+        ]);
+    }
+
+    private static function _showEditGroupForm(array $data=[])
+    {
+        return \Gini\IoC::construct('\Gini\CGI\Response\HTML', (string)V('settings/bpm/edit-group-form', $data));
+    }
+
+    public function actionSubmitGroup()
+    {
+        $group = _G('GROUP');
+        $me = _G('ME');
+        if (!$group->id || !$me->isAllowedTo('管理权限')) {
+            return false;
+        }
+
+        $post = $this->form('post');
+        $name = $post['name'];
+        $title = $post['title'];
+        $description = $post['description'];
+
+        $validator = new \Gini\CGI\Validator();
+        try {
+            $validator
+                ->validate('name', $name, T('请填写分组标识'))
+                ->validate('title', $title, T('请填写分组名称'))
+                ->done();
+        } catch (\Gini\CGI\Validator\Exception $e) {
+            $errors = $validator->errors();
+        }
+
+        if (!empty($errors)) {
+            return self::_showEditGroupForm([
+                'errors'=> $errors,
+                'form'=> $post
+            ]);
+        }
+
+        $engine = \Gini\Process\Engine::of('default');
+        $processName = \Gini\Config::get('app.order_review_process');
+
+        $process = $engine->getProcess($processName);
+
+        $group  = $process->getGroup($name);
+        $method = 'addGroup';
+        if ($group->id) {
+            $method = 'updateGroup';
+        }
+
+        $bool = $process->$method($name, [
+            'title'=> $title,
+            'description'=> $description
+        ]);
+
+        return \Gini\IoC::construct('\Gini\CGI\Response\JSON', $bool ? true : T('操作失败'));
+    }
+
 }

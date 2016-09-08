@@ -191,6 +191,14 @@
         border-bottom: 3px solid @permission-card-border;
         margin-bottom: 15px;
 
+        .permission-card-group-edit-handler, .permission-card-group-remove-handler {
+            cursor: pointer;
+            color: @permission-card-border;
+            &:hover {
+                color: @linkColor;
+            }
+        }
+
         .permission-card-header {
             position: relative;
             padding: 10px 15px;
