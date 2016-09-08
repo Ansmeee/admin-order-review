@@ -53,7 +53,9 @@ class Review extends Layout\Board
             'hazardous' => T('危险品'),
             'drug_precursor' => T('易制毒'),
             'highly_toxic'  => T('剧毒品'),
-            'explosive' => T('易制爆')
+            'explosive' => T('易制爆'),
+            'psychotropic'=> T('精神药品'),
+            'narcotic'=> T('麻醉药品'),
         ];
 
         if ($_SERVER['REQUEST_METHOD']==='POST') {
