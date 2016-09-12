@@ -189,8 +189,8 @@ class BPM extends \Gini\Controller\CGI
             if (!$group->id) {
                 return \Gini\IoC::construct('\Gini\CGI\Response\JSON', T('操作失败'));
             }
-            $group  = $process->getGroup($name);
-            if ($group->id) {
+            $newgroup  = $process->getGroup($name);
+            if ($newgroup->id && $newgroup->id!=$group->id) {
                 return \Gini\IoC::construct('\Gini\CGI\Response\JSON', T('操作失败, 分组标识已被占用'));
             }
         } else {
