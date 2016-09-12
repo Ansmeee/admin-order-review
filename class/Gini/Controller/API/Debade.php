@@ -40,7 +40,7 @@ class Debade extends \Gini\Controller\API
                 $instance = $engine->startProcessInstance($processName, $cacheData);
             }
         } else {
-            $instance = $engine->startProcessInstance($processName, $cacheData);
+            $instance = $engine->startProcessInstance($processName, $cacheData, "order#{$data['voucher']}");
         }
 
         if ($instance->id && $instance->id!=$instanceID) {
