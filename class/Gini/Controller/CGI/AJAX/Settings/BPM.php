@@ -156,6 +156,7 @@ class BPM extends \Gini\Controller\CGI
         }
 
         $post = $this->form('post');
+        $rawname = $post['rawname'];
         $name = $post['name'];
         $title = $post['title'];
         $description = $post['description'];
@@ -182,10 +183,18 @@ class BPM extends \Gini\Controller\CGI
 
         $process = $engine->getProcess($processName);
 
-        $group  = $process->getGroup($name);
-        $method = 'addGroup';
-        if ($group->id) {
+        if ($rawname) {
+            $group  = $process->getGroup($rawname);
             $method = 'updateGroup';
+            if (!$group->id) {
+                return \Gini\IoC::construct('\Gini\CGI\Response\JSON', T('操作失败'));
+            }
+        } else {
+            $group  = $process->getGroup($name);
+            $method = 'addGroup';
+            if ($group->id) {
+                return \Gini\IoC::construct('\Gini\CGI\Response\JSON', T('操作失败'));
+            }
         }
 
         $bool = $process->$method($name, [

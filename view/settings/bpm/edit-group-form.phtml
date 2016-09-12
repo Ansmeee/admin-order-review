@@ -7,6 +7,7 @@
                     <h4 class="modal-title"><?=H(empty($errors) ? ($group->id ? T('修改组') : T('添加组')) : T('出错了'))?></h4>
                 </div>
                 <div class="modal-body" style="padding: 20px 40px;">
+                    <input type="hidden" name="rawname" value="<?=H(isset($form['rawname']) ? $form['rawname'] : ($group->id?$group->name:''))?>" />
                     <div class="row form-group<?=empty($errors['name'])?'':' has-error'?>">
                         <label class="control-label"><?=H(T('分组标识'))?></label>
                         <input type="text" name="name" class="form-control" value="<?=H(isset($form['name']) ? $form['name'] : ($group->id?$group->name:''))?>"/>
