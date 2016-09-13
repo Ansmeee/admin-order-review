@@ -2,12 +2,13 @@
 <div id="access-board">
   <div class="permission-cards">
     <div class="permission-group">
-        <?php if (count($groups)) {?>
             <div class="row permission-group-body">
-            <?php foreach ($groups as $vI=>$vGroup) { ?>
-                <div class="column col-xs-6">
-                    <?=V('settings/bpm/permission-card', ['group'=> $vGroup])?>
-                </div>
+            <?php if (count($groups)) {?>
+                <?php foreach ($groups as $vI=>$vGroup) { ?>
+                    <div class="column col-xs-6">
+                        <?=V('settings/bpm/permission-card', ['group'=> $vGroup])?>
+                    </div>
+                <?php } ?>
             <?php } ?>
             <?php if ($me->isAllowedTo('管理权限')) {?>
                 <div class="column col-xs-6">
@@ -15,7 +16,6 @@
                 </div>
             <?php } ?>
             </div>
-        <?php } ?>
     </div>
   </div>
   <div class="access-members">
