@@ -18,13 +18,13 @@ class Review extends \Gini\Controller\CGI
         $type = strtolower($type);
 
         if ($type=='history') {
-            return $this->_showMoreInstance($page, $q);
+            return $this->_showMoreInstance($page, $q, $type);
         }
 
         return $this->_showMoreTask($page, $q);
     }
 
-    private function _showMoreInstance($page, $querystring=null)
+    private function _showMoreInstance($page, $querystring=null, $type='pending')
     {
         $me = _G('ME');
         $group = _G('GROUP');
