@@ -1,0 +1,6 @@
+---
+robot-work:
+  interval: '*/5 * * * *'
+  command: bpm robot work
+  comment: 每5分钟自动执行process
+...
