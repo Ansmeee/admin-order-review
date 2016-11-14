@@ -225,11 +225,17 @@ class Review extends \Gini\Controller\CGI
         return [$process, $engine];
     }
 
-    private function _getInstanceObject($instance)
+    private function _getInstanceObject($instance, $force=false)
     {
         $data = $instance->getVariable('data');
-        $order = a('order');
-        $order->setData($data);
+
+        if ($force) {
+            $order = a('order', ['voucher'=> $data['voucher']]);
+        }
+        if (!$order || !$order->id) {
+            $order = a('order');
+            $order->setData($data);
+        }        
 
         return $order;
     }
@@ -248,7 +254,7 @@ class Review extends \Gini\Controller\CGI
         $instance = $engine->fetchProcessInstance($processName, $id);
         if (!$instance || !$instance->id) return;
 
-        $order = $this->_getInstanceObject($instance);
+        $order = $this->_getInstanceObject($instance, true);
         if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
             'order'=> $order
@@ -269,7 +275,7 @@ class Review extends \Gini\Controller\CGI
         $task = $engine->getTask($id);
         if (!$task || !$task->id) return;
 
-        $order = $this->_getInstanceObject($task->instance);
+        $order = $this->_getInstanceObject($task->instance, true);
         if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
             'order'=> $order
