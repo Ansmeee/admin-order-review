@@ -19,7 +19,7 @@
         <ul class="list-unstyled ul-list clearfix row<?=$vAllowOperate ? '' : ' ul-list-noop'?>">
             <li class="ul-list-li-ctime"><?=H(date('Y-m-d H:i', strtotime($vOrder->ctime)))?></li>
             <li class="ul-list-li-voucher"><a class="app-link-dialog-handler" href="ajax/review/instance/<?=$vID?>"><?=H($vOrder->voucher)?></a></li>
-            <li class="ul-list-li-customer" title="<?=H($vOrder->group->abbr?:$vOrder->group->title)?>"><?=H($vOrder->group->abbr?:$vOrder->group->title)?></li>
+            <li class="ul-list-li-customer" title="<?=H($vOrder->group->name?:$vOrder->group->title)?>"><?=H($vOrder->group->name?:$vOrder->group->title)?></li>
             <li class="ul-list-li-vendor" title="<?=H($vOrder->vendor_name?:$vOrder->vendor->name)?>"><?=H($vOrder->vendor_name?:$vOrder->vendor->name)?></li>
             <li class="ul-list-li-product ul-list-li-product-strong">
             <?php
