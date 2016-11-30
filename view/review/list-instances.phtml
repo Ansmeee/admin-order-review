@@ -31,13 +31,13 @@
                 <?php } else { ?>
                 <div class="text-ellipsis" title="<?=H($vPData['name'])?> * <?=H($vPData['quantity'])?>">
                     <?php $vCasNO = $vPData['cas_no'];?>
+                    <?=H($vPData['name'])?> * <?=H($vPData['quantity'])?>
                     <?php if ($vCasNO && $vTypes=\Gini\ChemDB\Client::getTypes($vCasNO)) {?>
                         <?php foreach ((array) $vTypes[$vCasNO] as $vHTs) {?>
                             <?php if (!isset($vTxtTitle[$vHTs])) continue; ?>
                             <span class="product-type product-type-<?=H($vHTs)?>"><?=H($vTxtTitle[$vHTs])?></span>
                         <?php }?>
                     <?php }?>
-                    <?=H($vPData['name'])?> * <?=H($vPData['quantity'])?>
                 </div>
                 <?php }?>
             <?php }?>
