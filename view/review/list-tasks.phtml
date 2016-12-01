@@ -4,8 +4,9 @@
         <li class="ul-list-li-voucher"><?=H(T('订单编号'))?></li>
         <li class="ul-list-li-customer"><?=H(T('买方'))?></li>
         <li class="ul-list-li-vendor"><?=H(T('供应商'))?></li>
-        <li class="ul-list-li-product ul-list-li-product-strong"><?=H(T('商品'))?></li>
+        <li class="ul-list-li-product"><?=H(T('商品'))?></li>
         <li class="ul-list-li-price"><?=H(T('金额'))?></li>
+        <li class="ul-list-li-status"><?=H(T('状态'))?></li>
         <li class="ul-list-li-op"> &#160; </li>
     </ul>
 </div>
@@ -17,7 +18,7 @@
             <li class="ul-list-li-voucher"><a class="app-link-dialog-handler" href="ajax/review/task/<?=$vID?>"><?=H($vOrder->voucher)?></a></li>
             <li class="ul-list-li-customer" title="<?=H($vOrder->group->title)?>"><?=H($vOrder->group->title)?></li>
             <li class="ul-list-li-vendor" title="<?=H($vOrder->vendor_name?:$vOrder->vendor->name)?>"><?=H($vOrder->vendor_name?:$vOrder->vendor->name)?></li>
-            <li class="ul-list-li-product ul-list-li-product-strong">
+            <li class="ul-list-li-product">
             <?php
             $vItems = (array)$vOrder->items;
             $tmpI = 1;
@@ -39,7 +40,10 @@
             <?php }?>
             </li>
             <li class="ul-list-li-price"><?=H(money_format('%.2n', $vOrder->price))?></li>
-            <li class="ul-list-li-op">
+            <li class="ul-list-li-status">
+                <span class="btn btn-info btn-xs status" data-placement="left" data-preview="instance" data-href="ajax/review/preview/<?=H($vOrder->instance->id)?>"><?=H($vOrder->task_status)?></span>
+            </li>
+            <li class="ul-list-li-op text-center">
                 <span class="app-op-per-handler btn btn-link" data-id="<?=H($vID)?>" data-key="approve"><?=H(T('通过'))?></span>
                 <span class="app-op-per-handler btn btn-link" data-id="<?=H($vID)?>" data-key="reject"><?=H(T('拒绝'))?></span>
             </li>

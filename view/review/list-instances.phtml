@@ -43,8 +43,8 @@
             <?php }?>
             </li>
             <li class="ul-list-li-price"><?=H(money_format('%.2n', $vOrder->price))?></li>
-            <li class="ul-list-li-op">
-                <span class="btn btn-info btn-xs" data-placement="left" data-preview="instance" data-href="ajax/review/preview/<?=H($vID)?>"><?=H($vStatus)?></span>
+            <li class="ul-list-li-status">
+                <span class="btn btn-info btn-xs status" data-placement="left" data-preview="instance" data-href="ajax/review/preview/<?=H($vID)?>"><?=H($vStatus)?></span>
             </li>
         </ul>
     <?php }?>

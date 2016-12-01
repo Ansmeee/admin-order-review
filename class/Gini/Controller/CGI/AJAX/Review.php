@@ -136,7 +136,10 @@ class Review extends \Gini\Controller\CGI
 
         $orders = [];
         foreach ($tasks as $task) {
-            $orders[$task->id] = $this->_getInstanceObject($task->instance);
+            $object = $this->_getInstanceObject($task->instance);
+            $object->task_status = $this->_getInstanceStatus($engine, $task->instance);
+            $object->instance = $task->instance;
+            $orders[$task->id] = $object;
         }
 
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-tasks', [
