@@ -28,7 +28,7 @@
             foreach ((array)$vItems as $vPData) {?>
                 <?php if ($tmpI++>3) { ?>
                 <div>...</div>
-                <?php } else { ?>
+                <?php break;} else { ?>
                 <div class="text-ellipsis" title="<?=H($vPData['name'])?> * <?=H($vPData['quantity'])?>">
                     <?php $vCasNO = $vPData['cas_no'];?>
                     <?=H($vPData['name'])?> * <?=H($vPData['quantity'])?>
