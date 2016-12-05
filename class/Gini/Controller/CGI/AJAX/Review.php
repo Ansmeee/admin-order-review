@@ -56,7 +56,7 @@ class Review extends \Gini\Controller\CGI
             'type'=> $type,
             'page'=> $page,
             'total'=> ceil($totalCount/$limit),
-            'vTxtTitle' => \Gini\Config::get('haz_type')
+            'vTxtTitle' => \Gini\Config::get('haz.types')
         ]));
     }
 
@@ -147,7 +147,7 @@ class Review extends \Gini\Controller\CGI
             'type'=> $type,
             'page'=> $page,
             'total'=> ceil($tasks->totalCount()/$limit),
-            'vTxtTitle' => \Gini\Config::get('haz_type')
+            'vTxtTitle' => \Gini\Config::get('haz.types')
         ]));
     }
 
