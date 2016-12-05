@@ -56,7 +56,7 @@ class Review extends \Gini\Controller\CGI
             'type'=> $type,
             'page'=> $page,
             'total'=> ceil($totalCount/$limit),
-            'vTxtTitle' => \Gini\Config::get('haz.types')
+            'vTxtTitles' => \Gini\Config::get('haz.types')
         ]));
     }
 
@@ -147,7 +147,7 @@ class Review extends \Gini\Controller\CGI
             'type'=> $type,
             'page'=> $page,
             'total'=> ceil($tasks->totalCount()/$limit),
-            'vTxtTitle' => \Gini\Config::get('haz.types')
+            'vTxtTitles' => \Gini\Config::get('haz.types')
         ]));
     }
 
@@ -262,7 +262,8 @@ class Review extends \Gini\Controller\CGI
         $order = $this->_getInstanceObject($instance, true);
         if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
-            'order'=> $order
+            'order'=> $order,
+            'vTxtTitles' => \Gini\Config::get('haz.types')
         ]));
     }
 

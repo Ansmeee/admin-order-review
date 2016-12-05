@@ -116,7 +116,8 @@ class Review extends Layout\Board
         $this->view->body = V('order/review/info', [
             'request'=> $request,
             'order'=> $order,
-            'operators'=> $request->getAllowedOperators()
+            'operators'=> $request->getAllowedOperators(),
+            'vTxtTitles' => \Gini\Config::get('haz.types')
         ]);
     }
 
