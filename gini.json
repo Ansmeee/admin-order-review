@@ -2,7 +2,7 @@
     "id": "admin-order-review",
     "name": "Admin Order Review",
     "description": "App description...",
-    "version": "0.1.28",
+    "version": "0.1.29",
     "dependencies": {
         "gapper": ">=0.3.16",
         "admin-base": "*",
