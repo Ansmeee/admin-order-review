@@ -39,9 +39,9 @@
                 <div class="board-info-block">
                     <div class="board-info-block-title"><?=H($vD['title'])?></div>
                     <?php foreach ($vD['data'] as $vDI) {?>
-                    <dl>
+                    <dl style="overflow:hidden;text-overflow:ellipsis">
                         <dt><?=H($vDI[0])?></dt>
-                        <dd><?=H($vDI[1])?></dd>
+                        <dd style="display:inline"><?=H($vDI[1])?></dd>
                     </dl>
                     <?php }?>
                 </div>
