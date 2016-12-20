@@ -1,0 +1,5 @@
+gateway:
+  url: ${WEIXIN_GATEWAY_URL}
+  api_url: ${WEIXIN_GATEWAY_API}
+  client_id: ${WEIXIN_GATEWAY_CLIENT_ID}
+  client_secret: ${WEIXIN_GATEWAY_CLIENT_SECRET}

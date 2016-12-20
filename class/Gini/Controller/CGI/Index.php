@@ -32,6 +32,15 @@ class Index extends Layout\Board{
         $this->view->body = V('review/index', $vars);
     }
 
+    public function actionWechatBind()
+    {
+        $me = _G('ME');
+        $vars = [
+            'user' => $me,
+        ];
+        $this->view->body = V('wechat/bind', $vars);
+    }
+
     public function actionManager()
     {
         $me = _G('ME');
@@ -56,4 +65,17 @@ class Index extends Layout\Board{
         $this->view->body = V('settings/access', $vars);
     }
 
+    public function actionQR()
+    {
+        $group = _G('GROUP');
+        if (!$group->id) {
+            return $this->redirect('error/404');
+        }
+        header('Pragma: no-cache');
+        header('Content-type: image/png');
+        $url = URL('/wechat/user-bind');
+        $qrCode = new \TCPDF2DBarcode($url, 'QRCODE,L');
+        echo $qrCode->getBarcodePNG(4, 4);
+        exit;
+    }
 }
