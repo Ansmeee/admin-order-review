@@ -41,7 +41,7 @@ class Task extends \Gini\Controller\CLI
             ],
             'price' => [
                 'color' => '#173177',
-                'value' => $data['price'],
+                'value' => money_format('%.2n', $data['price']),
             ],
             'time' => [
                 'color' => '#173177',
