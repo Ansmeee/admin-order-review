@@ -3,3 +3,14 @@ gateway:
   api_url: ${WEIXIN_GATEWAY_API}
   client_id: ${WEIXIN_GATEWAY_CLIENT_ID}
   client_secret: ${WEIXIN_GATEWAY_CLIENT_SECRET}
+templates:
+  order-need-review:
+    id: oxorIgWCxM1iBrixeKyBZtC4RTdG2gMHx8dRk6PE28U
+    content:
+      title: first
+      vendor: keyword1
+      customer: keyword2
+      type: keyword3
+      price: keyword4
+      time: keyword5
+      note: remark
