@@ -3,4 +3,8 @@ robot-work:
   interval: '*/5 * * * *'
   command: bpm robot work
   comment: 每5分钟自动执行process
+sync-user:
+  interval: '30 2 * * *'
+  command: bpm user syncwechatinfo
+  comment: 每天2点30同步用户信息
 ...
