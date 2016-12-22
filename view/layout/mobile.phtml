@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="gini-locale" content="<?=H(\Gini\Config::get('system.locale'))?>"/>
+    <title><?=H(T('微信用户绑定'))?></title>
+    <base href="<?= H(URL('/')) ?>">
+    <?= V('layout/head-js') ?>
+    <link rel="stylesheet" href="//g.alicdn.com/msui/sm/0.6.2/css/sm.min.css">
+    <link rel="stylesheet" href="//g.alicdn.com/msui/sm/0.6.2/css/??sm.min.css,sm-extend.min.css">
+    <script src='//g.alicdn.com/sj/lib/zepto/zepto.min.js' charset='utf-8'></script>
+    <script src='//g.alicdn.com/msui/sm/0.6.2/js/sm.min.js' charset='utf-8'></script>
+    <link href="<?= H(RURL('mobile.css', 'css')) ?>" rel="stylesheet">
+</head>
+<?php
+?>
+<body<?= $vClass ? ' class="'.$vClass.'"' : ''?>>
+    <div id="body"><?= $body ?></div>
+</body>
+</html>
