@@ -10,6 +10,18 @@
             </div>
             <div class="modal-body">
                 <?php
+                $customer_data = [
+                    [T('买方'), $order->group->title],
+                    [T('买方负责人'), $order->group->creator->name],
+                ];
+
+                if ($order->idnumber) {
+                    $customer_data = [
+                        [T('买方'), $order->group->title],
+                        [T('买方负责人'), $order->group->creator->name],
+                        [T('身份证号'), $order->idnumber],
+                    ];
+                }
                 $vData = [
                     [
                         'title'=> T('供应商'),
@@ -19,10 +31,7 @@
                     ],
                     [
                         'title'=> T('买方信息'),
-                        'data'=> [
-                            [T('买方'), $order->group->title],
-                            [T('买方负责人'), $order->group->creator->name],
-                        ]
+                        'data'=> $customer_data,
                     ],
                     [
                         'title'=> T('送货信息'),
@@ -41,7 +50,7 @@
                     <?php foreach ($vD['data'] as $vDI) {?>
                     <dl style="overflow:hidden;text-overflow:ellipsis">
                         <dt><?=H($vDI[0])?></dt>
-                        <dd style="display:inline"><?=H($vDI[1])?></dd>
+                        <dd><?=H($vDI[1])?></dd>
                     </dl>
                     <?php }?>
                 </div>
