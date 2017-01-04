@@ -34,7 +34,7 @@ class Review extends \Gini\Controller\CGI
             'type'=> $type,
             'page'=> $page,
             'total'=> $total,
-            'vTxtTitles' => \Gini\Config::get('haz.types');
+            'vTxtTitles' => \Gini\Config::get('haz.types'),
         ]));
     }
 
