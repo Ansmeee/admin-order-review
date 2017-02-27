@@ -14,13 +14,15 @@ class Task
         $rpc = \Gini\Module\AppBase::getAppRPC('order');
         if (!$rpc) return false;
 
-        try {
-            $bool = $rpc->mall->order->updateOrder($voucher, [
-                'description'=> $description,
-                'hash_rand_key'=> date('Y-m-d H:i:s'),
-            ]);
-        } catch (\Exception $e) {
-            return false;
+        if ($description) {
+            try {
+                $bool = $rpc->mall->order->updateOrder($voucher, [
+                    'description'=> $description,
+                    'hash_rand_key'=> date('Y-m-d H:i:s'),
+                ]);
+            } catch (\Exception $e) {
+                return false;
+            }
         }
         return true;
     }
