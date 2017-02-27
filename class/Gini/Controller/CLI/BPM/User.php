@@ -6,12 +6,8 @@ class User extends \Gini\Controller\CLI
 {
     public function actionSyncWechatInfo()
     {
-    	$users = Those('sjtu/bpm/process/group/user');
-    	$conf = \Gini\Config::get('tag-db.rpc');
-    	$client = \Gini\Config::get('tag-db.client');
-    	$rpc = \Gini\Ioc::construct('\Gini\RPC', $conf['url']);
-    	$token = $rpc->tagdb->authorize($client['id'], $client['secret']);
-    	if (!$token) return;
+        $users = Those('sjtu/bpm/process/group/user');
+        $rpc = \Gini\Module\AppBase::getTagDBRPC();
     	foreach ($users as $user) {
     		if (!$user->wechat_data) {
 				$wechat_data = [];

@@ -16,31 +16,23 @@ abstract class Wechat extends \Gini\Controller\CGI\Layout
                 \Gini\Gapper\Client::loginByUserName($username);
                 $userID = _G('ME')->id;
                 if ($userID) {
-                    $conf = \Gini\Config::get('tag-db.rpc');
-                    $client = \Gini\Config::get('tag-db.client');
-                    $url = $conf['url'];
-                    $clientID = $client['id'];
-                    $clientSecret = $client['secret'];
-                    $rpc = \Gini\IoC::construct('\Gini\RPC', $url);
-                    $token = $rpc->TagDB->authorize($clientID, $clientSecret);
-                    if ($token) {
-                        $tagName = "labmai-user/{$userID}";
-                        $data = $rpc->tagdb->data->get($tagName);
-                        if (!$data) {
-                            $userInfo = $this->getUserInfo();
-                            if (!$userInfo['openid']) {
-                                $this->redirect('wechat/stare-account');
-                            }
-                            $data = [
-                                'openid' => $userInfo['openid'],
-                                'unionid' => $userInfo['unionid'],
-                            ];
-                            if (!$rpc->tagdb->data->set($tagName, $data)) {
-                                $this->redirect('wechat/user-bind-fail');
-                            }
+                    $rpc = \Gini\Module\AppBase::getTagDBRPC();
+                    $tagName = "labmai-user/{$userID}";
+                    $data = $rpc->tagdb->data->get($tagName);
+                    if (!$data) {
+                        $userInfo = $this->getUserInfo();
+                        if (!$userInfo['openid']) {
+                            $this->redirect('wechat/stare-account');
                         }
-                        $this->redirect($_SERVER['REQUEST_URI']);
+                        $data = [
+                            'openid' => $userInfo['openid'],
+                            'unionid' => $userInfo['unionid'],
+                        ];
+                        if (!$rpc->tagdb->data->set($tagName, $data)) {
+                            $this->redirect('wechat/user-bind-fail');
+                        }
                     }
+                    $this->redirect($_SERVER['REQUEST_URI']);
                 }
             }
         }

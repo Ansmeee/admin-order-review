@@ -33,13 +33,7 @@ class Wechat extends Layout\Wechat
         }
         $me = _G('ME');
         $userID = $me->id;
-        $conf = \Gini\Config::get('tag-db.rpc');
-        $url = $conf['url'];
-        $client = \Gini\Config::get('tag-db.client');
-        $clientID = $client['id'];
-        $clientSecret = $client['secret'];
-        $rpc = \Gini\IoC::construct('\Gini\RPC', $url);
-        $rpc->TagDB->authorize($clientID, $clientSecret);
+        $rpc = \Gini\Module\AppBase::getTagDBRPC();
         $tagName = "labmai-user/{$userID}";
         $data = [
             'unionid' => $unionid,
