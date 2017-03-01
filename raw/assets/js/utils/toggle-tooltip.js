@@ -1,4 +1,6 @@
 define('utils/toggle-tooltip', ['jquery', 'bootstrap'], function($) {
-    $('[data-toggle="tooltip"]').tooltip();
+    $(document).on('mousever', '[data-toggle="tooltip"]', function () {
+        $(this).tooltip('show');
+    });
 });
 
