@@ -140,7 +140,7 @@ class Review extends \Gini\Controller\CGI
         $db = \Gini\Database::db();
         $db->beginTransaction();
         try {
-            $rpc = self::_getRPC('order');
+            $rpc = \Gini\Module\AppBase::getMallRPC('order');
             $request->log = array_merge((array)$request->log, [
                 [
                     'ctime'=> date('Y-m-d H:i:s'),
@@ -220,29 +220,6 @@ class Review extends \Gini\Controller\CGI
             'id'=> $id, // request->id
             'message' => $message ?: ($bool ? T('操作成功') : T('操作失败, 请您重试')),
         ]);
-    }
-
-    private static $_RPCs = [];
-    private static function _getRPC($type)
-    {
-        $confs = \Gini\Config::get('mall.rpc');
-        if (!isset($confs[$type])) {
-            $type = 'default';
-        }
-        $conf = $confs[$type] ?: [];
-        if (!self::$_RPCs[$type]) {
-            $rpc = \Gini\IoC::construct('\Gini\RPC', $conf['url']);
-            self::$_RPCs[$type] = $rpc;
-            $client = \Gini\Config::get('mall.client');
-            $token = $rpc->mall->authorize($client['id'], $client['secret']);
-            if (!$token) {
-                \Gini\Logger::of(APP_ID)
-                    ->error('Mall\\RObject getRPC: authorization failed with {client_id}/{client_secret} !',
-                        ['client_id' => $client['id'], 'client_secret' => $client['secret']]);
-            }
-        }
-
-        return self::$_RPCs[$type];
     }
 
 }
