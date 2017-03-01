@@ -84,7 +84,7 @@
                         <div class="col col-xs-2 text-right"><?=H(($vItem['unit_price']==-1) ? T('待询价') :  money_format('%.2n', $vItem['unit_price'] * $vItem['quantity']))?></div>
                     </div>
                     <?php if ($vItem['customized']) {?>
-                    <div class="row board-table-row board-table-li"><div class="col col-cs-12">
+                    <div class="row board-table-row board-table-li"><div class="col col-xs-12">
                         <?=H(T('自购理由: %reason', ['%reason'=> $vItem['reason']]))?>
                     </div></div>
                     <?php }?>

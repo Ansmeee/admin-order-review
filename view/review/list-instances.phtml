@@ -31,6 +31,9 @@
                 <?php break;} else { ?>
                 <div class="text-ellipsis" title="<?=H($vPData['name'])?> * <?=H($vPData['quantity'])?>">
                     <?php $vCasNO = $vPData['cas_no'];?>
+                    <?php if ($vPData['customized']) {?>
+                    <i data-require="utils/toggle-tooltip" class="fa fa-info-circle" data-toggle="tooltip" data-placement="top" title="<?=H(T('自购理由: %reason', ['%reason'=> $vPData['reason']]))?>"></i>
+                    <?php }?>
                     <?=H($vPData['name'])?> * <?=H($vPData['quantity'])?>
                     <?php if ($vCasNO && $vTypes=\Gini\ChemDB\Client::getTypes($vCasNO)) {?>
                         <?php foreach ((array) $vTypes[$vCasNO] as $vHTs) {?>
