@@ -55,10 +55,7 @@
         <?php foreach ($order->items as $vItem) { ?>
         <div class="row board-table-row board-table-li">
             <div class="col col-xs-2">
-                <?php foreach ((array) $vItem['product_types'] as $vHTs) {?>
-                    <?php if (!isset($vTxtTitles[$vHTs])) continue;?>
-                    <span class="product-type product-type-<?=H($vHTs)?>"><?=H($vTxtTitles[$vHTs])?></span>
-                <?php }?>
+                <?=\Gini\ORM\Product::showTagsHTML($vItem['product_types'], 'full')?>
                 <?=H($vItem['name'])?>
             </div>
             <div class="col col-xs-2"><?=H($vItem['manufacturer'])?></div>
