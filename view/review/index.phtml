@@ -1,20 +1,20 @@
 <div class="board-header" data-require="page/review" id="admin-order-review">
-    <?php 
-    $me = _G('ME');
-    if ($me->isAllowedTo('管理权限')) {
-    ?>
     <div class="pull-right" style="margin-top:13px;">
         <div class="dropdown" style="margin-left:40px;margin-right:20px;">
             <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                 <i class="fa fa-cog" style="margin-right:10px;"></i><span class="caret"></span>
             </button>
             <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
+                <?php 
+                $me = _G('ME');
+                if ($me->isAllowedTo('管理权限')) {
+                ?>
                 <li class="show-settings text-center" style="cursor:pointer;"><a href="manager"><?= H(T('设置分组')) ?></a></li>
+                <?php }?>
                 <li class="show-settings text-center" style="cursor:pointer;"><a href="wechat-bind"><?= H(T('微信绑定')) ?></a></li>
             </ul>
         </div>
     </div>
-    <?php }?>
     <ul class="board-header-ul list-unstyled">
         <li <?=$type == 'pending' ? 'class="active"' : '' ?>><a href="pending"><?= H(T('待审采购')) ?></a></li>
         <li <?=$type == 'history' ? 'class="active"' : '' ?>><a href="history"><?= H(T('审核历史')) ?></a></li>
