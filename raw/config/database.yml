@@ -7,3 +7,8 @@ hazardous: # 用来获取危化品管理员设置的分级审查信息
   dsn: mysql:dbname=${DB_PREFIX}_admin;host=${DB_HOST};port=${DB_PORT}
   username: ${DB_USER}
   password: ${DB_PASS}
+
+mall-old:
+  dsn: mysql:dbname=mall_${DB_PREFIX};host=${DB_HOST};port=${DB_PORT}
+  username: ${DB_USER}
+  password: ${DB_PASS}
