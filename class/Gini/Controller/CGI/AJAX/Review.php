@@ -180,6 +180,17 @@ class Review extends \Gini\Controller\CGI
 
         $task = $engine->getTask($id);
         if ($key=='approve') {
+            $db = \Gini\Database::db('mall-old');
+                $params = [
+                    'voucher' => $task->instance->data['data']['voucher'],
+                    'date' => date('Y-m-d H:i:s'),
+                    'operator' => _G('ME')->id,
+                    'type' => \Gini\ORM\Order::OPERATE_TYPE_APPROVE,
+                    'description' => $group->title.T('审批人'),
+                ];
+            $sql = "insert into order_operate_info (voucher,operate_date,operator_id,type,description) values (:voucher, :date, :operator, :type, :description)";
+            $query = $db->query($sql, null, $params);
+
             $bool = $task->approve($note);
         } else {
             $bool = $task->reject($note);

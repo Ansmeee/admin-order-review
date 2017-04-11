@@ -168,6 +168,17 @@ class Review extends \Gini\Controller\CGI
                     if (!$bool) {
                         throw new \Exception();
                     }
+
+                    $db = \Gini\Database::db('mall-old');
+                    $params = [
+                         'voucher' => $request->voucher,
+                         'date' => date('Y-m-d H:i:s'),
+                         'operator' => $me->id,
+                         'type' => \Gini\ORM\Order::OPERATE_TYPE_APPROVE,
+                         'description' => $group->title.'审批人',
+                    ];
+                    $sql = "insert into order_operate_info (voucher,operate_date,operator_id,type,description) values (:voucher, :date, :operator, :type, :description)";
+                    $query = $db->query($sql, null, $params);
                 }
                 else if ($toStatus == \Gini\ORM\Order\Review\Request::STATUS_SCHOOL_PASSED) {
                     $bool = $rpc->mall->order->updateOrder($request->voucher, [
@@ -184,6 +195,17 @@ class Review extends \Gini\Controller\CGI
                     if (!$bool) {
                         throw new \Exception();
                     }
+
+                    $db = \Gini\Database::db('mall-old');
+                    $params = [
+                         'voucher' => $request->voucher,
+                         'date' => date('Y-m-d H:i:s'),
+                         'operator' => $me->id,
+                         'type' => \Gini\ORM\Order::OPERATE_TYPE_APPROVE,
+                         'description' => $group->title.T('审批人'),
+                    ];
+                    $sql = "insert into order_operate_info (voucher,operate_date,operator_id,type,description) values (:voucher, :date, :operator, :type, :description)";
+                    $query = $db->query($sql, null, $params);
                 }
                 elseif (in_array($toStatus, [
                     \Gini\ORM\Order\Review\Request::STATUS_UNIVERS_FAILED,
