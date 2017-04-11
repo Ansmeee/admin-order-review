@@ -174,7 +174,7 @@ class Review extends \Gini\Controller\CGI
                          'voucher' => $request->voucher,
                          'date' => date('Y-m-d H:i:s'),
                          'operator' => $me->id,
-                         'type' => \Gini\ORM\Order::TYPE_APPROVE,
+                         'type' => \Gini\ORM\Order::OPERATE_TYPE_APPROVE,
                          'description' => $group->title.'审批人',
                     ];
                     $sql = "insert into order_operate_info (voucher,operate_date,operator_id,type,description) values (:voucher, :date, :operator, :type, :description)";
