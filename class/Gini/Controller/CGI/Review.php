@@ -8,7 +8,6 @@ class Review extends Layout\Board
     {
         return $this->redirect('review/pending');
     }
-
     /**
         * @brief 待审采购
         *
@@ -120,5 +119,38 @@ class Review extends Layout\Board
             'vTxtTitles' => \Gini\Config::get('haz.types')
         ]);
     }
+    
+    public function actionAttachDownload($id, $item_index=0, $license_index=0, $type)
+    {
+        $processName = \Gini\Config::get('app.order_review_process');
+        $engine = \Gini\Process\Engine::of('default');
 
+        $task = $engine->getTask($id);
+        if (!$task || !$task->id) return;
+
+        $order = $this->_getInstanceObject($task->instance, true);
+        $items = $order->items;
+        $info  = $items[$item_index][$type.'_images'][$license_index];
+        $fullpath = \Gini\Core::locateFile('data/customized/'.$info['path']);
+        if(is_file($fullpath)) {
+            header("Content-Disposition: attachment; filename=".basename($fullpath));
+            readfile($fullpath);
+            exit;
+        }
+    }
+
+    private function _getInstanceObject($instance, $force=false)
+    {
+        $data = $instance->getVariable('data');
+
+        if ($force) {
+            $order = a('order', ['voucher'=> $data['voucher']]);
+        }
+        if (!$order || !$order->id) {
+            $order = a('order');
+            $order->setData($data);
+        }
+
+        return $order;
+    }
 }

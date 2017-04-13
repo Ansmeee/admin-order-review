@@ -295,7 +295,8 @@ class Review extends \Gini\Controller\CGI
         $order = $this->_getInstanceObject($task->instance, true);
         if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
-            'order'=> $order
+            'order'=> $order,
+            'task'=> $task
         ]));
     }
 

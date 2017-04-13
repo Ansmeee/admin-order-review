@@ -14,7 +14,6 @@
                     [T('买方'), $order->group->title],
                     [T('买方负责人'), $order->group->creator->name],
                 ];
-
                 if ($order->idnumber) {
                     $customer_data = [
                         [T('买方'), $order->group->title],
@@ -26,7 +25,7 @@
                     [
                         'title'=> T('供应商'),
                         'data'=> [
-                            [T('供应商'), $order->vendor_name?:$order->vendor->name],
+                            [T('供应商'), $order->vendor_name?:$order->vendor->name]
                         ]
                     ],
                     [
@@ -54,7 +53,46 @@
                     </dl>
                     <?php }?>
                 </div>
-                <?php }?>
+                <?php }?>   
+                <?php 
+                    $items = $order->items;
+                    $item = current($items);
+                    if ($item['customized']) {
+                ?>
+                <div class="board-info-block">
+                    <div class="board-info-block-title"><?=H(T('资质信息'))?></div>
+                    <dl style="overflow:hidden;text-overflow:ellipsis">
+                        <dt><?= T('营业执照') ?></dt>
+                        <dd>
+                            <?php
+                            foreach ($order->items as $i => $vItem) {
+                                if ($license_images = $vItem['license_images']) {
+                                    foreach ((array)$license_images as $index => $license_image) {
+                                        $name = $license_image['name'];
+                                        echo '<a href="review/attach-download/'.$task->id.'/'.$i.'/'.$index.'/license"><i class="fa fa-image"></i>'.$name.'</a>';
+                                    }
+                                }
+                            }
+                            ?>
+                        </dd>
+                    </dl>
+                    <dl style="overflow:hidden;text-overflow:ellipsis">
+                        <dt><?= T('其他执照') ?></dt>
+                        <dd>
+                            <?php
+                            foreach ($order->items as $i => $vItem) {
+                                if ($extra_images = $vItem['extra_images']) {
+                                    foreach ((array)$extra_images as $index => $extra_image) {
+                                        $name = $extra_image['name'];
+                                        echo '<a href="review/attach-download/'.$task->id.'/'.$i.'/'.$index.'/extra"><i class="fa fa-image"></i>'.$name.'</a>';
+                                    }
+                                }
+                            }
+                            ?>
+                        </dd>
+                    </dl>
+                </div>
+                <?php } ?>
 
                 <div class="board-info-block">
                     <div class="board-info-block-title"><?=H(T('商品清单'))?></div>
