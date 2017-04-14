@@ -178,17 +178,19 @@ class Review extends \Gini\Controller\CGI
         list($process, $engine) = $this->_getProcessEngine();
         if (!$process->id) return;
 
+        $me = _G('ME');
         $task = $engine->getTask($id);
         if ($key=='approve') {
             $db = \Gini\Database::db('mall-old');
             $params = [
-                'voucher' => $task->instance->data['data']['voucher'],
-                'date' => date('Y-m-d H:i:s'),
-                'operator' => _G('ME')->id,
-                'type' => \Gini\ORM\Order::OPERATE_TYPE_APPROVE,
-                'description' => $task->candidate_group->title.T('审批人'),
+                ':voucher' => $task->instance->data['data']['voucher'],
+                ':date' => date('Y-m-d H:i:s'),
+                ':operator' => $me->id,
+                ':type' => \Gini\ORM\Order::OPERATE_TYPE_APPROVE,
+                ':name' => $me->name,
+                ':description' => $task->candidate_group->title.T('审批人'),
             ];
-            $sql = "insert into order_operate_info (voucher,operate_date,operator_id,type,description) values (:voucher, :date, :operator, :type, :description)";
+            $sql = "insert into order_operate_info (voucher,operate_date,operator_id,type,name,description) values (:voucher, :date, :operator, :type, :name, :description)";
             $query = $db->query($sql, null, $params);
 
             $bool = $task->approve($note);
