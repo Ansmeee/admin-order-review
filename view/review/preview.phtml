@@ -8,7 +8,6 @@
     <dl class="status-line-content list-unstyled">
         <dt><?=H(T('跟踪信息'))?></dt>
     <?php foreach ($tasks as $task) { ?>
-        <?php if (!$task->message) continue;?>
         <dd class="status-line-content-li">
             <div title="<?=H($task->message)?>"><?=H($task->message)?></div>
             <div><?=H(T(':group:user:date', [
