@@ -48,18 +48,20 @@ class Index extends Layout\Board{
             $this->redirect('error/401');
         }
 
-        $engine = \Gini\Process\Engine::of('default');
-        $processName = \Gini\Config::get('app.order_review_process');
-
-        $process = $engine->getProcess($processName);
-        $groups = $process->getGroups();
+        try {
+            $processName = \Gini\Config::get('app.order_review_process');
+            $engine = \Gini\BPM\Engine::of('camunda');
+            $o = $engine->searchGroups(['type' => $processName]);
+            $groups = $engine->getGroups($o->token, 0, $o->total);
+        } catch (\Gini\BPM\Exception $e) {
+            $groups = [];
+        }
 
         $vars = [
             'type' => 'manager',
             'data' => [
                 'groups'=> $groups
             ]
-            
         ];
 
         $this->view->body = V('settings/access', $vars);
