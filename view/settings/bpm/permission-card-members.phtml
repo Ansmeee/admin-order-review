@@ -1,5 +1,6 @@
-<?php foreach ($members as $member) { 
-    if (!$member->name) continue; 
+<?php foreach ($members as $m) {
+    $member = a('user', (int) $m->id);
+    if (!$member->name) continue;
 ?>
 <dd class="permission-user" data-id="<?= H($member->id) ?>">
   <?= H($member->name) ?>

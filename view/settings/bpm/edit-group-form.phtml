@@ -7,26 +7,19 @@
                     <h4 class="modal-title"><?=H(empty($errors) ? ($group->id ? T('修改组') : T('添加组')) : T('出错了'))?></h4>
                 </div>
                 <div class="modal-body" style="padding: 20px 40px;">
-                    <input type="hidden" name="rawname" value="<?=H(isset($form['rawname']) ? $form['rawname'] : ($group->id?$group->name:''))?>" />
-                    <div class="row form-group<?=empty($errors['name'])?'':' has-error'?>">
+                    <input type="hidden" name="id" value="<?=H(isset($form['id']) ? $form['id'] : ($group->id?:''))?>" />
+                    <div class="row form-group<?=empty($errors['key'])?'':' has-error'?>">
                         <label class="control-label"><?=H(T('分组标识'))?></label>
+                        <input type="text" name="key" class="form-control" value="<?=H(isset($form['key']) ? $form['key'] : ($group->id?:''))?>"/>
+                        <?php if (!empty($errors['key'])) {?>
+                        <div class="text-danger"><?=H($errors['key'])?></div>
+                        <?php }?>
+                    </div>
+                    <div class="row form-group<?=empty($errors['name'])?'':' has-error'?>">
+                        <label class="control-label"><?=H(T('分组名称'))?></label>
                         <input type="text" name="name" class="form-control" value="<?=H(isset($form['name']) ? $form['name'] : ($group->id?$group->name:''))?>"/>
                         <?php if (!empty($errors['name'])) {?>
                         <div class="text-danger"><?=H($errors['name'])?></div>
-                        <?php }?>
-                    </div>
-                    <div class="row form-group<?=empty($errors['title'])?'':' has-error'?>">
-                        <label class="control-label"><?=H(T('分组名称'))?></label>
-                        <input type="text" name="title" class="form-control" value="<?=H(isset($form['title']) ? $form['title'] : ($group->id?$group->title:''))?>"/>
-                        <?php if (!empty($errors['title'])) {?>
-                        <div class="text-danger"><?=H($errors['title'])?></div>
-                        <?php }?>
-                    </div>
-                    <div class="row form-group<?=empty($errors['description'])?'':' has-error'?>">
-                        <label class="control-label"><?=H(T('分组描述'))?></label>
-                        <input type="text" name="description" class="form-control" value="<?=H(isset($form['description']) ? $form['description'] : ($group->id?$group->description:''))?>"/>
-                        <?php if (!empty($errors['description'])) {?>
-                        <div class="text-danger"><?=H($errors['description'])?></div>
                         <?php }?>
                     </div>
                 </div>
@@ -38,4 +31,3 @@
         </div>
     </div>
 </div>
-

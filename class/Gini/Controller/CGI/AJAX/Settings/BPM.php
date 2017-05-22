@@ -12,7 +12,7 @@ class BPM extends \Gini\Controller\CGI
             return false;
         }
 
-        $per_page = 20;
+        $per_page = 25;
         $next_start = $start + $per_page;
 
         $form = $this->form();
@@ -40,16 +40,14 @@ class BPM extends \Gini\Controller\CGI
 
         $user = a('user', $post['id']);
         if (!$user->id) return false;
+        try {
+            $engine = \Gini\BPM\Engine::of('camunda');
+            $group  = $engine->group($pname);
 
-        $engine = \Gini\Process\Engine::of('default');
-        $processName = \Gini\Config::get('app.order_review_process');
-
-        $process = $engine->getProcess($processName);
-
-        $group  = $process->getGroup($pname);
-        if (!$group->id) return false;
-
-        $success = !!$group->addUser($user);
+            if (!$group->id) return false;
+            $success = $group->addMember($user->id);
+        } catch (\Gini\BPM\Exception $e) {
+        }
 
         return \Gini\IoC::construct('\Gini\CGI\Response\JSON', $success);
     }
@@ -73,16 +71,14 @@ class BPM extends \Gini\Controller\CGI
         $user = a('user', $post['id']);
         if (!$user->id) return false;
 
-        $engine = \Gini\Process\Engine::of('default');
-        $processName = \Gini\Config::get('app.order_review_process');
+        try {
+            $engine = \Gini\BPM\Engine::of('camunda');
+            $group  = $engine->group($pname);
+            if (!$group->id) return false;
 
-        $process = $engine->getProcess($processName);
-
-        $group  = $process->getGroup($pname);
-        if (!$group->id) return false;
-
-        $success = !!$group->removeUser($user);
-
+            $success = $group->removeMember($user->id);
+        } catch (\Gini\BPM\Exception $e) {
+        }
         return \Gini\IoC::construct('\Gini\CGI\Response\JSON', $success);
     }
 
@@ -97,14 +93,9 @@ class BPM extends \Gini\Controller\CGI
         $post = $this->form('post');
         if (!isset($post['group'])) return false;
 
-        $engine = \Gini\Process\Engine::of('default');
-        $processName = \Gini\Config::get('app.order_review_process');
-
-        $process = $engine->getProcess($processName);
-
-        $name = $post['group'];
-
-        $success = $process->removeGroup($name);
+        $engine = \Gini\BPM\Engine::of('camunda');
+        $group = $engine->group($post['group']);
+        $success = $group->delete();
 
         return \Gini\IoC::construct('\Gini\CGI\Response\JSON', $success ? true : T('操作失败, 请重试'));
     }
@@ -130,12 +121,9 @@ class BPM extends \Gini\Controller\CGI
         $get = $this->form('get');
         if (!isset($get['group'])) return false;
 
-        $engine = \Gini\Process\Engine::of('default');
-        $processName = \Gini\Config::get('app.order_review_process');
+        $engine = \Gini\BPM\Engine::of('camunda');
+        $group  = $engine->group($get['group']);
 
-        $process = $engine->getProcess($processName);
-
-        $group  = $process->getGroup($get['group']);
         if (!$group->id) return false;
         return self::_showEditGroupForm([
             'group'=> $group
@@ -156,16 +144,15 @@ class BPM extends \Gini\Controller\CGI
         }
 
         $post = $this->form('post');
-        $rawname = $post['rawname'];
+        $id = $post['id'];
+        $key = $post['key'];
         $name = $post['name'];
-        $title = $post['title'];
-        $description = $post['description'];
 
         $validator = new \Gini\CGI\Validator();
         try {
             $validator
-                ->validate('name', $name, T('请填写分组标识'))
-                ->validate('title', $title, T('请填写分组名称'))
+                ->validate('key', $key, T('请填写分组标识'))
+                ->validate('name', $name, T('请填写分组名称'))
                 ->done();
         } catch (\Gini\CGI\Validator\Exception $e) {
             $errors = $validator->errors();
@@ -178,35 +165,48 @@ class BPM extends \Gini\Controller\CGI
             ]);
         }
 
-        $engine = \Gini\Process\Engine::of('default');
+        $engine = \Gini\BPM\Engine::of('camunda');
         $processName = \Gini\Config::get('app.order_review_process');
 
-        $process = $engine->getProcess($processName);
-
-        if ($rawname) {
-            $group  = $process->getGroup($rawname);
-            $method = 'updateGroup';
-            if (!$group->id) {
-                return \Gini\IoC::construct('\Gini\CGI\Response\JSON', T('操作失败'));
+        if ($id) {
+            try {
+                $rgroup  = $engine->group($id);
+            } catch (\Gini\BPM\Exception $e) {
             }
-            $newgroup  = $process->getGroup($name);
-            if ($newgroup->id && $newgroup->id!=$group->id) {
+
+            $method = 'update';
+            if (!$rgroup->id) return \Gini\IoC::construct('\Gini\CGI\Response\JSON', T('操作失败'));
+
+            try {
+                $update_group  = $engine->group($key);
+            } catch (\Gini\BPM\Exception $e) {
+            }
+
+            if ($update_group->id && $update_group->id != $rgroup->id) {
                 return \Gini\IoC::construct('\Gini\CGI\Response\JSON', T('操作失败, 分组标识已被占用'));
             }
         } else {
-            $group  = $process->getGroup($name);
-            $method = 'addGroup';
-            if ($group->id) {
-                return \Gini\IoC::construct('\Gini\CGI\Response\JSON', T('操作失败, 分组标识已被占用'));
+            try {
+                $rgroup  = $engine->group($key);
+                if ($rgroup->id) {
+                    return \Gini\IoC::construct('\Gini\CGI\Response\JSON', T('操作失败, 分组标识已被占用'));
+                }
+            } catch (\Gini\BPM\Exception $e) {
+                $rgroup = $engine->group();
             }
+            $method = 'create';
         }
 
-        $bool = $process->$method($name, [
-            'title'=> $title,
-            'description'=> $description
-        ]);
+        try {
+            $bool = $rgroup->$method([
+                'id'=> $key,
+                'name'=> $name,
+                'type'=> $processName
+            ]);
+        } catch (\Gini\BPM\Exception $e) {
+            return \Gini\IoC::construct('\Gini\CGI\Response\JSON', T('操作失败'));
+        }
 
         return \Gini\IoC::construct('\Gini\CGI\Response\JSON', $bool ? true : T('操作失败'));
     }
-
 }

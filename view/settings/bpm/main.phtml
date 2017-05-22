@@ -2,20 +2,20 @@
 <div id="access-board">
   <div class="permission-cards">
     <div class="permission-group">
-            <div class="row permission-group-body">
-            <?php if (count($groups)) {?>
-                <?php foreach ($groups as $vI=>$vGroup) { ?>
-                    <div class="column col-xs-6">
-                        <?=V('settings/bpm/permission-card', ['group'=> $vGroup])?>
-                    </div>
-                <?php } ?>
-            <?php } ?>
-            <?php if ($me->isAllowedTo('管理权限')) {?>
+        <div class="row permission-group-body">
+        <?php if (count($groups)) {?>
+            <?php foreach ($groups as $vI=>$vGroup) { ?>
                 <div class="column col-xs-6">
-                    <h4 class="permission-card-group-add-handler" style="cursor:pointer;background-color:#f9f9f9;text-align:center; height:102px;line-height:102px;overflow:hidden;padding:0;margin:0;"><span class="fa fa-plus"></span></h4>
+                    <?=V('settings/bpm/permission-card', ['group'=> $vGroup])?>
                 </div>
             <?php } ?>
+        <?php } ?>
+        <?php if ($me->isAllowedTo('管理权限')) {?>
+            <div class="column col-xs-6">
+                <h4 class="permission-card-group-add-handler" style="cursor:pointer;background-color:#f9f9f9;text-align:center; height:81.4px;line-height:81.4px;overflow:hidden;padding:0;margin:0;"><span class="fa fa-plus"></span></h4>
             </div>
+        <?php } ?>
+        </div>
     </div>
   </div>
   <div class="access-members">
@@ -36,7 +36,7 @@
         <div class="loading text-center">
             <i class="fa fa-2x fa-spinner fa-spin"></i>
         </div>
-        <div class="user-icon pull-left app-add-member-handler" style="cursor:pointer;" data-require="gapper/client/add-member">
+        <div class="user-icon pull-left app-add-member-opt" style="cursor:pointer;" data-require="group/add-member">
             <div class="user-icon-image text-center">
                 <div class="user-icon-text" style="line-height:55px;background-color:#aaa">
                     <span style="font-size:40px;color:#eb5767">+</span>
@@ -52,10 +52,10 @@ require(['jquery', 'more', 'url'], function($, More, U){
 
     var form = <?= J((object)$form) ?>;
 
-    var $container = $('#access-board .access-members'); 
+    var $container = $('#access-board .access-members');
     var $bar = $container.find('.search-bar');
     var $results = $container.find('.search-results');
-    var $addHandler = $('.app-add-member-handler');
+    var $addHandler = $('.app-add-member-opt');
 
     $results.data('criteria', form);
 
@@ -70,7 +70,7 @@ require(['jquery', 'more', 'url'], function($, More, U){
             $addHandler.length && $results.append($addHandler);
         }
     });
-    
+
     function _refresh() {
         U.changeURL(U.modifyURL(null, form));
         more.reload();
@@ -216,10 +216,10 @@ require(['jquery', 'utils/dragdrop'], function($) {
 
 			$ele.data('id', id);
 			$ele.data('name', name);
-            
+
             var $body = $(this);
             var $card = $body.parents('.permission-card');
-            
+
             // ajax 操作
             $.post('ajax/settings/bpm/add-user/' + $card.data('permission'), {
                 id: id
@@ -236,7 +236,7 @@ require(['jquery', 'utils/dragdrop'], function($) {
             });
 		}
 	});
-    
+
     $board.on('click', '.permission-card-body .delete-member', function(){
         var $button = $(this);
         var $user = $button.parents('.permission-user');
@@ -251,17 +251,17 @@ require(['jquery', 'utils/dragdrop'], function($) {
             }
         });
 	});
-    
+
     var _relayout = function($group) {
-        
+
         $group.each(function(){
             var $self = $(this);
-            
+
             var $columns = $self.children('.column');
             var $cards = $self.find('.permission-card');
-            
+
             $cards.detach();
-            
+
             $cards.each(function(){
                 $(this).appendTo($columns[0]);
                 $columns.sort(function(a, b){
@@ -270,7 +270,7 @@ require(['jquery', 'utils/dragdrop'], function($) {
             })
         });
     };
-    
+
     _relayout($board.find('.permission-group-body'));
 
 });
