@@ -166,8 +166,8 @@ class BPM extends \Gini\Controller\CGI
         }
 
         $engine = \Gini\BPM\Engine::of('camunda');
-        $processName = \Gini\Config::get('app.order_review_process');
-
+        $conf = \Gini\Config::get('app.order_review_process');
+        $processName = $conf['name'];
         if ($id) {
             try {
                 $rgroup  = $engine->group($id);
@@ -210,3 +210,4 @@ class BPM extends \Gini\Controller\CGI
         return \Gini\IoC::construct('\Gini\CGI\Response\JSON', $bool ? true : T('操作失败'));
     }
 }
+

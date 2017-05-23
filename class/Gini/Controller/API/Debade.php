@@ -27,20 +27,50 @@ class Debade extends \Gini\Controller\API
 
         if ($data['status']!=\Gini\ORM\Order::STATUS_NEED_MANAGER_APPROVE) return;
 
-        $processName = \Gini\Config::get('app.order_review_process');
-        $engine = \Gini\Process\Engine::of('default');
+        $node = \Gini\Config::get('app.node');
+        $conf = \Gini\Config::get('app.order_review_process');
+        $processName = $conf['name'];
+
+        try {
+            $engine =  \Gini\BPM\Engine::of('camunda');
+            $process = $engine->process($processName);
+        } catch (\Gini\BPM\Exception $e) {
+        }
+
+        $types = [];
+        $items = (array)$message['data']['items'];
+        foreach ($items as $item) {
+            $casNO = $item['cas_no'];
+            $chem_types = (array)@\Gini\ChemDB\Client::getTypes($casNO)[$casNO];
+            $types = array_unique(array_merge($types, $chem_types));
+        }
+
+        if (array_intersect($types, $conf['haz_types'])) {
+            $cacheData['need_approve'] = true;
+        }
+
+        //设置 candidate_group
+        $key = "labmai-".$node."/".$data['group_id'];
+        $info = (array)\Gini\TagDB\Client::of('rpc')->get($key);
+        $cacheData['candidate_group'] = (int)$info['organization']['school_code'];
+
+        $steps = $conf['steps'];
+        foreach ($steps as $step) {
+            if ($step == 'school') continue;
+            $cacheData[$step] = $step;
+        }
+
+        $cacheData['data'] = $message['data'];
+        $cacheData['key'] = $processName;
 
         $instanceID = $this->_getOrderInstanceID($processName, $data['voucher']);
-
-        $cacheData = $message;
-        $cacheData['data']['items'] = json_encode($message['data']['items']);
         if ($instanceID) {
-            $instance = $engine->fetchProcessInstance($processName, $instanceID);
-            if (!$instance->id || $instance->status==\Gini\Process\IInstance::STATUS_END) {
-                $instance = $engine->startProcessInstance($processName, $cacheData, "order#{$data['voucher']}");
+            $instance = $engine->processInstance($instanceID);
+            if (!$instance->id) {
+                $instance = $process->start($cacheData);
             }
         } else {
-            $instance = $engine->startProcessInstance($processName, $cacheData, "order#{$data['voucher']}");
+            $instance = $process->start($cacheData);
         }
 
         if ($instance->id && $instance->id!=$instanceID) {
@@ -50,7 +80,8 @@ class Debade extends \Gini\Controller\API
 
     private function _getOrderInstanceID($processName, $voucher)
     {
-        $key = "order#{$voucher}";
+        $node = \Gini\Config::get('app.node');
+        $key = "{$node}#order#{$voucher}";
         $info = (array)\Gini\TagDB\Client::of('default')->get($key);
         //$info = [ 'bpm'=> [ $processName=> [ 'instances'=> [ $instanceID, $latestinstanceid ] ] ] ]
         $info = (array)@$info['bpm'][$processName]['instances'];
@@ -59,11 +90,11 @@ class Debade extends \Gini\Controller\API
 
     private function _setOrderInstanceID($processName, $voucher, $instanceID)
     {
-        $key = "order#{$voucher}";
+        $node = \Gini\Config::get('app.node');
+        $key = "{$node}#order#{$voucher}";
         $info = (array)\Gini\TagDB\Client::of('default')->get($key);
         $info['bpm'][$processName]['instances'] = @$info['bpm'][$processName]['instances'] ?: [];
         array_push($info['bpm'][$processName]['instances'], $instanceID);
         \Gini\TagDB\Client::of('default')->set($key, $info);
     }
-
 }

@@ -4,10 +4,8 @@ namespace Gini\Process\Engine\SJTU;
 
 class Task
 {
-    public static function doUpdate($task, $description)
+    public static function doUpdate($orderData, $description)
     {
-        $instance = $task->instance;
-        $orderData = (array)$instance->getVariable('data');
         $voucher = $orderData['voucher'];
         if (!$voucher) return false;
 

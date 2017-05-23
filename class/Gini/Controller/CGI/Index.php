@@ -49,7 +49,8 @@ class Index extends Layout\Board{
         }
 
         try {
-            $processName = \Gini\Config::get('app.order_review_process');
+            $conf = \Gini\Config::get('app.order_review_process');
+            $processName = $conf['name'];
             $engine = \Gini\BPM\Engine::of('camunda');
             $o = $engine->searchGroups(['type' => $processName]);
             $groups = $engine->getGroups($o->token, 0, $o->total);
@@ -81,3 +82,4 @@ class Index extends Layout\Board{
         exit;
     }
 }
+

@@ -16,13 +16,14 @@
         <ul class="list-unstyled ul-list clearfix row<?=$vAllowOperate ? '' : ' ul-list-noop'?>">
             <li class="ul-list-li-ctime"><?=H(date('Y-m-d H:i', strtotime($vOrder->ctime?:$vOrder->request_date)))?></li>
             <li class="ul-list-li-voucher"><a class="app-link-dialog-handler" href="ajax/review/task/<?=$vID?>"><?=H($vOrder->voucher)?></a></li>
-            <li class="ul-list-li-customer" title="<?=H($vOrder->group->title)?>"><?=H($vOrder->group->title)?></li>
+            <li class="ul-list-li-customer" title="<?=H($vOrder->customer->name)?>"><?=H($vOrder->customer->name)?></li>
             <li class="ul-list-li-vendor" title="<?=H($vOrder->vendor_name?:$vOrder->vendor->name)?>"><?=H($vOrder->vendor_name?:$vOrder->vendor->name)?></li>
             <li class="ul-list-li-product">
             <?php
             $vItems = (array)$vOrder->items;
             $tmpI = 1;
-            foreach ((array)$vItems as $vPData) {?>
+            foreach ($vItems as $vPData) { ?>
+                <?php $vPData = (array)$vPData ?>
                 <?php if ($tmpI++>3) { ?>
                 <div>...</div>
                 <?php break;} else { ?>
@@ -69,3 +70,4 @@
     <li data-page="<?=H($total)?>" data-type="<?=H($type)?>" class="app-pager-li-handler<?=($page==$total) ? ' app-pager-li-active' : ''?>"><?=H(T('尾页'))?></li>
 <?php }?>
 </ul>
+
