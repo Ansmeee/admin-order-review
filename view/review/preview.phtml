@@ -13,7 +13,7 @@
             <div><?=H(T(':group:user:date', [
                 ':group'=> $task->group ? $task->group . ' ' : '',
                 ':user'=> $task->user ? $task->user. ' ' : '',
-                ':date'=> $task->date?:$task->auto_approve_date?:$task->auto_reject_date
+                ':date'=> $task->date? $task->date. ' ' : ''
             ]))?></div>
         </dd>
     <?php }?>

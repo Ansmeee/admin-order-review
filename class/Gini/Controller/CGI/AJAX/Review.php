@@ -47,7 +47,7 @@ class Review extends \Gini\Controller\CGI
             $object = new \stdClass();
             $object->instance = $instance;
             $object->order = $this->_getInstanceObject($instance);
-            $object->status = $this->_getInstanceStatus($engine, $instance);
+            $object->status = $this->_getExecutionStatus($engine, $instance);
             $objects[$instance->id] = $object;
         }
 
@@ -60,21 +60,18 @@ class Review extends \Gini\Controller\CGI
         ]));
     }
 
-    private function _getInstanceStatus($engine, $instance)
+    private function _getExecutionStatus($engine, $execution)
     {
-        if ($instance->ended) {
+        if ($execution->isEnd()) {
             return T('已结束');
         }
 
-        // $params['active'] = true;
-        // $params['instance'] = $instance->key;
-        // $o = $engine->searchTasks($params);
-        // $tasks = $engine->getTasks($o->token);
-        //
-        // $task = current($tasks);
-        // $processName = \Gini\Config::get('app.order_review_process');
-        // $process = $engine->process($processName);
-        // $group = $process->getGroup($task->assignee);
+        $params['active'] = true;
+        $params['execution'] = $execution->id;
+        $o = $engine->searchTasks($params);
+        $tasks = $engine->getTasks($o->token, 0, $o->total);
+        $task = current($tasks);
+        $group = $engine->group($task->assignee);
 
         return T('等待 :group 审批', [':group' => $group->name]);
     }
@@ -116,8 +113,9 @@ class Review extends \Gini\Controller\CGI
             try {
                 $data = $task->getVariables('data');
                 $object = json_decode($data['value']);
-                $instance = $engine->processInstance($task->processInstanceId);
-                $object->task_status = $this->_getInstanceStatus($engine, $instance);
+                $execution = $engine->execution($task->executionId);
+                $object->task_status = $this->_getExecutionStatus($engine, $execution);
+                $object->execution = $execution;
                 $orders[$task->id] = $object;
             } catch (\Gini\BPM\Exception $e) {
                 continue;
@@ -225,43 +223,46 @@ class Review extends \Gini\Controller\CGI
         return $bool;
     }
 
-    private function _approve($engine, $task, $message = '') {
+    private function _getCurrentStep($assignee)
+    {
         $conf = \Gini\Config::get('app.order_review_process');
         $steps = $conf['steps'];
-        $instance_id = $task->processInstanceId;
+        $step_arr = explode('-', $assignee);
+        foreach ($step_arr as $step) {
+            if (in_array($step, $steps)) {
+                $now_step = $step;
+                break;
+            }
+        }
+        $opt = $now_step.'_'.$conf['option'];
+        return $opt;
+    }
+
+    private function _approve($engine, $task, $message = '') {
         try {
             $rData = $task->getVariables('data');
             $order_data = (array) json_decode($rData['value']);
             $assignee = $task->assignee;
-            $step_arr = explode('-', $assignee);
-            foreach ($step_arr as $step) {
-                if (in_array($step, $steps)) {
-                    $now_step = $step;
-                    break;
-                }
-            }
-            $opt = $now_step.'_'.$conf['option'];
+            $candidate_group = $engine->group($assignee);
+            $opt = $this->_getCurrentStep($assignee);
             $params[$opt] = true;
+
+            if ($message) {
+                $params['comment'] = [
+                    'message' => $message,
+                    'group' => $candidate_group->name,
+                    'user' => _G('ME')->name,
+                    'date' => date('Y-m-d H:i:s')
+                ];
+            }
 
             $bool = $task->complete($params);
             if ($bool) {
-                $candidate_group = $engine->group($assignee);
                 $data['opt'] = T('审核通过');
                 $data['message'] = $message;
                 $data['candidate_group'] = $candidate_group->name;
                 $data['order_data'] = $order_data;
                 $this->_doUpdate($data);
-
-                $instance = $engine->processInstance($instance_id);
-
-                //可以封装
-                if ($instance->state === 'COMPLETED') {
-                    $callback = $conf['callback'];
-                    $customizedMethod = [$callback, 'pass'];
-                    if (method_exists($callback, 'pass')) {
-                        $bool = call_user_func($customizedMethod, $order_data);
-                    }
-                }
             }
         } catch (\Gini\BPM\Exception $e) {
         }
@@ -270,37 +271,30 @@ class Review extends \Gini\Controller\CGI
     }
 
     private function _reject($engine, $task, $message = '') {
-        $conf = \Gini\Config::get('app.order_review_process');
-        $steps = $conf['steps'];
-        $instance_id = $task->processInstanceId;
         try {
             $rData = $task->getVariables('data');
             $order_data = (array) json_decode($rData['value']);
             $assignee = $task->assignee;
-            $step_arr = explode('-', $assignee);
-            foreach ($step_arr as $step) {
-                if (in_array($step, $steps)) {
-                    $now_step = $step;
-                    break;
-                }
-            }
-            $opt = $now_step.'_'.$conf['option'];
+            $candidate_group = $engine->group($assignee);
+            $opt = $this->_getCurrentStep($assignee);
             $params[$opt] = false;
+
+            if ($message) {
+                $params['comment'] = [
+                    'message' => $message,
+                    'group' => $candidate_group->name,
+                    'user' => _G('ME')->name,
+                    'date' => date('Y-m-d H:i:s')
+                ];
+            }
 
             $bool = $task->complete($params);
             if ($bool) {
-                $candidate_group = $engine->group($assignee);
                 $data['opt'] = T('拒绝');
                 $data['message'] = $message;
                 $data['candidate_group'] = $candidate_group->name;
                 $data['order_data'] = $order_data;
                 $this->_doUpdate($data);
-
-                $callback = $conf['callback'];
-                $customizedMethod = [$callback, 'reject'];
-                if (method_exists($callback, 'reject')) {
-                    $bool = call_user_func($customizedMethod, $order_data);
-                }
             }
         } catch (\Gini\BPM\Exception $e) {
         }
@@ -429,27 +423,33 @@ class Review extends \Gini\Controller\CGI
             return;
         }
 
-        $conf = \Gini\Config::get('app.order_review_process');
-        $processName = $conf['name'];
-        $engine = \Gini\BPM\Engine::of('camunda');
-        $instance = $engine->fetchProcessInstance($processName, $instanceID);
-        if (!$instance || !$instance->id) return;
+        try {
+            $conf = \Gini\Config::get('app.order_review_process');
+            $processName = $conf['name'];
+            $engine = \Gini\BPM\Engine::of('camunda');
+            $execution = $engine->execution($instanceID);
+            if (!$execution->id) return;
 
-        $params['instance'] = $instance->key;
+            $params['execution'] = $execution->id;
+            $params['history'] = true;
 
-        $o = $engine->searchTasks($params);
-        $tasks = $engine->getHistoryTasks($o->token);
+            $o = $engine->searchTasks($params);
+            $tasks = $engine->getTasks($o->token, 0, $o->total);
+        } catch (\Gini\BPM\Exception $e) {
+        }
 
         $data = [];
         foreach ($tasks as $task) {
-
-            $data[$task->id] = $task;
+            try {
+                $rdata = $task->getVariables('comment');
+                $comment = json_decode($rdata['value']);
+                if (!$comment->message) continue;
+            } catch (\Gini\BPM\Exception $e) {
+                continue;
+            }
+            $data[$task->id] = $comment;
         }
 
-        $vars = [
-            'tasks'=> $data
-        ];
-        return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/preview', $vars));
+        return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/preview', ['tasks' => $data]));
     }
 }
-
