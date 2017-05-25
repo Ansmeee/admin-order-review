@@ -74,7 +74,6 @@ class Review extends \Gini\Controller\CGI
                 return T('已结束');
             }
 
-            $params['history'] = true;
             $params['instance'] = $instance->id;
             $o = $engine->searchTasks($params);
             $tasks = $engine->getTasks($o->token, 0, $o->total);
@@ -453,4 +452,3 @@ class Review extends \Gini\Controller\CGI
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/preview', ['tasks' => $data]));
     }
 }
-
