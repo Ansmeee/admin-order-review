@@ -31,49 +31,59 @@ class Review extends \Gini\Controller\CGI
         $limit = 25;
         $start = ($page - 1) * $limit;
 
-        list($process, $engine) = $this->_getProcessEngine();
-        if (!$process->id) return;
+        try {
+            list($process, $engine) = $this->_getProcessEngine();
+            if (!$process->id) return;
 
-        $user = $me->isAllowedTo('管理权限') ? null : $me;
+            $user = $me->isAllowedTo('管理权限') ? null : $me;
+            $params['process'] = $process->id;
+            $params['history'] = true;
 
-        $instances = $process->getInstances($start, $limit, $user);
-        if (!count($instances)) {
-            return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
-        }
-        $totalCount = $process->searchInstances($user);
+            $o = $engine->searchInstances($params);
+            $instances = $engine->getInstances($o->token, $start, $limit);
 
-        $objects = [];
-        foreach ($instances as $instance) {
-            $object = new \stdClass();
-            $object->instance = $instance;
-            $object->order = $this->_getInstanceObject($instance);
-            $object->status = $this->_getExecutionStatus($engine, $instance);
-            $objects[$instance->id] = $object;
+            if (!count($instances)) {
+                return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
+            }
+            $objects = [];
+            foreach ($instances as $instance) {
+                $object = new \stdClass();
+                $businessKey = $instance->businessKey;
+                $voucher = explode('_', $businessKey)[1];
+                $object->order = a('order', ['voucher' => $voucher]);
+                $object->instance = $instance;
+                $object->status = $this->_getInstanceStatus($engine, $instance);
+                $objects[$instance->id] = $object;
+            }
+        } catch (\Gini\BPM\Exception $e) {
         }
 
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-instances', [
             'instances'=> $objects,
             'type'=> $type,
             'page'=> $page,
-            'total'=> ceil($totalCount/$limit),
+            'total'=> ceil($o->total/$limit),
             'vTxtTitles' => \Gini\Config::get('haz.types')
         ]));
     }
 
-    private function _getExecutionStatus($engine, $execution)
+    private function _getInstanceStatus($engine, $instance)
     {
-        if ($execution->isEnd()) {
-            return T('已结束');
+        try {
+            if ($instance->isEnd()) {
+                return T('已结束');
+            }
+
+            $params['history'] = true;
+            $params['instance'] = $instance->id;
+            $o = $engine->searchTasks($params);
+            $tasks = $engine->getTasks($o->token, 0, $o->total);
+            $task = current($tasks);
+            $group = $engine->group($task->assignee);
+
+            return T('等待 :group 审批', [':group' => $group->name]);
+        } catch (\Gini\BPM\Exception $e) {
         }
-
-        $params['active'] = true;
-        $params['execution'] = $execution->id;
-        $o = $engine->searchTasks($params);
-        $tasks = $engine->getTasks($o->token, 0, $o->total);
-        $task = current($tasks);
-        $group = $engine->group($task->assignee);
-
-        return T('等待 :group 审批', [':group' => $group->name]);
     }
 
     private function _showMoreTask($page, $querystring=null)
@@ -113,9 +123,9 @@ class Review extends \Gini\Controller\CGI
             try {
                 $data = $task->getVariables('data');
                 $object = json_decode($data['value']);
-                $execution = $engine->execution($task->executionId);
-                $object->task_status = $this->_getExecutionStatus($engine, $execution);
-                $object->execution = $execution;
+                $instance = $engine->processInstance($task->processInstanceId);
+                $object->task_status = $this->_getInstanceStatus($engine, $instance);
+                $object->instance = $instance;
                 $orders[$task->id] = $object;
             } catch (\Gini\BPM\Exception $e) {
                 continue;
@@ -354,21 +364,6 @@ class Review extends \Gini\Controller\CGI
         return [$process, $engine];
     }
 
-    private function _getInstanceObject($instance, $force=false)
-    {
-        $data = $instance->getVariable('data');
-
-        if ($force) {
-            $order = a('order', ['voucher'=> $data['voucher']]);
-        }
-        if (!$order || !$order->id) {
-            $order = a('order');
-            $order->setData($data);
-        }
-
-        return $order;
-    }
-
     public function actionInstance($id)
     {
         $me = _G('ME');
@@ -379,12 +374,13 @@ class Review extends \Gini\Controller\CGI
 
         $conf = \Gini\Config::get('app.order_review_process');
         $processName = $conf['name'];
-        $engine = \Gini\Process\Engine::of('default');
+        $engine = \Gini\BPM\Engine::of('camunda');
 
-        $instance = $engine->fetchProcessInstance($processName, $id);
+        $instance = $engine->processInstance($id);
         if (!$instance || !$instance->id) return;
-
-        $order = $this->_getInstanceObject($instance, true);
+        $businessKey = $instance->businessKey;
+        $voucher = explode('_', $businessKey)[1];
+        $order = a('order', ['voucher' => $voucher]);
         if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
             'order'=> $order,
@@ -400,15 +396,19 @@ class Review extends \Gini\Controller\CGI
             return;
         }
 
-        $conf = \Gini\Config::get('app.order_review_process');
-        $processName = $conf['name'];
-        $engine = \Gini\Process\Engine::of('default');
+        try {
+            $conf = \Gini\Config::get('app.order_review_process');
+            $processName = $conf['name'];
+            $engine = \Gini\BPM\Engine::of('camunda');
+            $task = $engine->task($id);
+            if (!$task->id) return;
+            $rdata = $task->getVariables('data');
+            $order_data = (array) json_decode($rdata['value']);
+            $order = a('order', ['voucher'=> $order_data['voucher']]);
+            if (!$order->id) return;
+        } catch (\Gini\BPM\Exception $e) {
+        }
 
-        $task = $engine->getTask($id);
-        if (!$task || !$task->id) return;
-
-        $order = $this->_getInstanceObject($task->instance, true);
-        if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
             'order'=> $order,
             'task'=> $task
@@ -427,10 +427,10 @@ class Review extends \Gini\Controller\CGI
             $conf = \Gini\Config::get('app.order_review_process');
             $processName = $conf['name'];
             $engine = \Gini\BPM\Engine::of('camunda');
-            $execution = $engine->execution($instanceID);
-            if (!$execution->id) return;
+            $instance = $engine->processInstance($instanceID);
+            if (!$instance->id) return;
 
-            $params['execution'] = $execution->id;
+            $params['instance'] = $instance->id;
             $params['history'] = true;
 
             $o = $engine->searchTasks($params);
@@ -453,3 +453,4 @@ class Review extends \Gini\Controller\CGI
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/preview', ['tasks' => $data]));
     }
 }
+

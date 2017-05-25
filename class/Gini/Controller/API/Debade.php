@@ -45,7 +45,8 @@ class Debade extends \Gini\Controller\API
             $types = array_unique(array_merge($types, $chem_types));
         }
 
-        if (array_intersect($types, $conf['haz_types'])) {
+        //自购订单和危化订单需要审批
+        if (($data['customized'] && $conf['customized']) || array_intersect($types, $conf['haz_types'])) {
             $cacheData['need_approve'] = true;
         }
 
@@ -61,8 +62,9 @@ class Debade extends \Gini\Controller\API
         }
 
         $cacheData['data'] = $message['data'];
-        $cacheData['voucher'] = $message['data']['voucher'];
+        $cacheData['voucher'] = $data['voucher'];
         $cacheData['key'] = $processName;
+        $cacheData['tag'] = $data['voucher'];
 
         $instanceID = $this->_getOrderInstanceID($processName, $data['voucher']);
         if ($instanceID) {
@@ -99,3 +101,4 @@ class Debade extends \Gini\Controller\API
         \Gini\TagDB\Client::of('default')->set($key, $info);
     }
 }
+
