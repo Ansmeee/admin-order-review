@@ -44,11 +44,9 @@ class Debade extends \Gini\Controller\API
             $chem_types = (array)@\Gini\ChemDB\Client::getTypes($casNO)[$casNO];
             $types = array_unique(array_merge($types, $chem_types));
         }
-
-        //自购订单和危化订单需要审批
-        if (($data['customized'] && $conf['customized']) || array_intersect($types, $conf['haz_types'])) {
-            $cacheData['need_approve'] = true;
-        }
+        
+        $cacheData['customized'] = $data['customized'];
+        $cacheData['chemicalTypes'] = $types;
 
         //设置 candidate_group
         $key = "labmai-".$node."/".$data['group_id'];
@@ -62,7 +60,6 @@ class Debade extends \Gini\Controller\API
         }
 
         $cacheData['data'] = $message['data'];
-        $cacheData['voucher'] = $data['voucher'];
         $cacheData['key'] = $processName;
         $cacheData['tag'] = $data['voucher'];
 
@@ -101,4 +98,3 @@ class Debade extends \Gini\Controller\API
         \Gini\TagDB\Client::of('default')->set($key, $info);
     }
 }
-
