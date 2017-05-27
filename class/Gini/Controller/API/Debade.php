@@ -41,7 +41,7 @@ class Debade extends \Gini\Controller\API
         $items = (array)$message['data']['items'];
         foreach ($items as $item) {
             $casNO = $item['cas_no'];
-            $chem_types = (array)@\Gini\ChemDB\Client::getTypes($casNO)[$casNO];
+            $chem_types = (array) \Gini\ChemDB\Client::getTypes($casNO)[$casNO];
             $types = array_unique(array_merge($types, $chem_types));
         }
 
@@ -87,7 +87,7 @@ class Debade extends \Gini\Controller\API
         $key = "{$node}#order#{$voucher}";
         $info = (array)\Gini\TagDB\Client::of('default')->get($key);
         //$info = [ 'bpm'=> [ $processName=> [ 'instances'=> [ $instanceID, $latestinstanceid ] ] ] ]
-        $info = (array)@$info['bpm'][$processName]['instances'];
+        $info = (array) $info['bpm'][$processName]['instances'];
         return array_pop($info);
     }
 
@@ -96,9 +96,8 @@ class Debade extends \Gini\Controller\API
         $node = \Gini\Config::get('app.node');
         $key = "{$node}#order#{$voucher}";
         $info = (array)\Gini\TagDB\Client::of('default')->get($key);
-        $info['bpm'][$processName]['instances'] = @$info['bpm'][$processName]['instances'] ?: [];
+        $info['bpm'][$processName]['instances'] = $info['bpm'][$processName]['instances'] ?: [];
         array_push($info['bpm'][$processName]['instances'], $instanceID);
         \Gini\TagDB\Client::of('default')->set($key, $info);
     }
 }
-
