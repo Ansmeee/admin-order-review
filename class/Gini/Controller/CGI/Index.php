@@ -51,7 +51,7 @@ class Index extends Layout\Board{
         try {
             $conf = \Gini\Config::get('app.order_review_process');
             $processName = $conf['name'];
-            $engine = \Gini\BPM\Engine::of('camunda');
+            $engine = \Gini\BPM\Engine::of('order_review');
             $o = $engine->searchGroups(['type' => $processName]);
             $groups = $engine->getGroups($o->token, 0, $o->total);
         } catch (\Gini\BPM\Exception $e) {

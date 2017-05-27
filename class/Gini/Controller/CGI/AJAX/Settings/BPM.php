@@ -41,7 +41,7 @@ class BPM extends \Gini\Controller\CGI
         $user = a('user', $post['id']);
         if (!$user->id) return false;
         try {
-            $engine = \Gini\BPM\Engine::of('camunda');
+            $engine = \Gini\BPM\Engine::of('order_review');
             $group  = $engine->group($pname);
 
             if (!$group->id) return false;
@@ -72,7 +72,7 @@ class BPM extends \Gini\Controller\CGI
         if (!$user->id) return false;
 
         try {
-            $engine = \Gini\BPM\Engine::of('camunda');
+            $engine = \Gini\BPM\Engine::of('order_review');
             $group  = $engine->group($pname);
             if (!$group->id) return false;
 
@@ -93,7 +93,7 @@ class BPM extends \Gini\Controller\CGI
         $post = $this->form('post');
         if (!isset($post['group'])) return false;
 
-        $engine = \Gini\BPM\Engine::of('camunda');
+        $engine = \Gini\BPM\Engine::of('order_review');
         $group = $engine->group($post['group']);
         $success = $group->delete();
 
@@ -121,7 +121,7 @@ class BPM extends \Gini\Controller\CGI
         $get = $this->form('get');
         if (!isset($get['group'])) return false;
 
-        $engine = \Gini\BPM\Engine::of('camunda');
+        $engine = \Gini\BPM\Engine::of('order_review');
         $group  = $engine->group($get['group']);
 
         if (!$group->id) return false;
@@ -165,7 +165,7 @@ class BPM extends \Gini\Controller\CGI
             ]);
         }
 
-        $engine = \Gini\BPM\Engine::of('camunda');
+        $engine = \Gini\BPM\Engine::of('order_review');
         $conf = \Gini\Config::get('app.order_review_process');
         $processName = $conf['name'];
         if ($id) {

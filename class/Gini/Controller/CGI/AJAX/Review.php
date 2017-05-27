@@ -356,7 +356,7 @@ class Review extends \Gini\Controller\CGI
     {
         try {
             $conf = \Gini\Config::get('app.order_review_process');
-            $engine = \Gini\BPM\Engine::of('camunda');
+            $engine = \Gini\BPM\Engine::of('order_review');
             $process = $engine->process($conf['name']);
         } catch (\Gini\BPM\Exception $e) {
         }
@@ -373,7 +373,7 @@ class Review extends \Gini\Controller\CGI
 
         $conf = \Gini\Config::get('app.order_review_process');
         $processName = $conf['name'];
-        $engine = \Gini\BPM\Engine::of('camunda');
+        $engine = \Gini\BPM\Engine::of('order_review');
 
         $instance = $engine->processInstance($id);
         if (!$instance || !$instance->id) return;
@@ -398,7 +398,7 @@ class Review extends \Gini\Controller\CGI
         try {
             $conf = \Gini\Config::get('app.order_review_process');
             $processName = $conf['name'];
-            $engine = \Gini\BPM\Engine::of('camunda');
+            $engine = \Gini\BPM\Engine::of('order_review');
             $task = $engine->task($id);
             if (!$task->id) return;
             $rdata = $task->getVariables('data');
@@ -425,7 +425,7 @@ class Review extends \Gini\Controller\CGI
         try {
             $conf = \Gini\Config::get('app.order_review_process');
             $processName = $conf['name'];
-            $engine = \Gini\BPM\Engine::of('camunda');
+            $engine = \Gini\BPM\Engine::of('order_review');
             $instance = $engine->processInstance($instanceID);
             if (!$instance->id) return;
 
