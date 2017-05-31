@@ -1,5 +1,5 @@
 <div class="preview-content">
-<?php if (!count($tasks)) { ?>
+<?php if (!count($comments)) { ?>
     <div class="row"><div class="col-xs-12">
         <?=H(T('暂无审核历史'))?>
     </div></div>
@@ -7,13 +7,13 @@
 <div class="status-line">
     <dl class="status-line-content list-unstyled">
         <dt><?=H(T('跟踪信息'))?></dt>
-    <?php foreach ($tasks as $task) { ?>
+    <?php foreach ($comments as $comment) { ?>
         <dd class="status-line-content-li">
-            <div title="<?=H($task->message)?>"><?=H($task->message)?></div>
+            <div title="<?=H($comment->message)?>"><?=H($comment->message)?></div>
             <div><?=H(T(':group:user:date', [
-                ':group'=> $task->group ? $task->group . ' ' : '',
-                ':user'=> $task->user ? $task->user. ' ' : '',
-                ':date'=> $task->date? $task->date. ' ' : ''
+                ':group'=> $comment->group ? $comment->group . ' ' : '',
+                ':user'=> $comment->user ? $comment->user. ' ' : '',
+                ':date'=> $comment->date? $comment->date. ' ' : ''
             ]))?></div>
         </dd>
     <?php }?>
@@ -21,3 +21,4 @@
 </div>
 <?php } ?>
 </div>
+

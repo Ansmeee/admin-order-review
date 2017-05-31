@@ -39,17 +39,23 @@ class Review extends \Gini\Controller\CGI
             $params['process'] = $process->id;
             $params['history'] = true;
 
-            $o = $engine->searchInstances($params);
-            $instances = $engine->getInstances($o->token, $start, $limit);
+            $o = $engine->searchProcessInstances($params);
+            $instances = $engine->getProcessInstances($o->token, $start, $limit);
 
             if (!count($instances)) {
                 return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
             }
             $objects = [];
+
             foreach ($instances as $instance) {
+                $params['variableName'] = 'data';
+                $params['processInstanceId'] = $instance->id;
+                $o = $engine->searchVariableInstances($params);
+                $variable_instance = $engine->getVariableInstances($o->token);
+                $order_data = json_decode(current($variable_instance)['value']);
                 $object = new \stdClass();
                 $businessKey = $instance->businessKey;
-                $voucher = explode('_', $businessKey)[1];
+                $voucher = $order_data->voucher;
                 $object->order = a('order', ['voucher' => $voucher]);
                 $object->instance = $instance;
                 $object->status = $this->_getInstanceStatus($engine, $instance);
@@ -70,7 +76,7 @@ class Review extends \Gini\Controller\CGI
     private function _getInstanceStatus($engine, $instance)
     {
         try {
-            if ($instance->isEnd()) {
+            if ($instance->state === 'COMPLETED') {
                 return T('已结束');
             }
 
@@ -257,7 +263,7 @@ class Review extends \Gini\Controller\CGI
             $params[$opt] = true;
 
             if ($message) {
-                $params['comment'] = [
+                $params[$opt.'_comment'] = [
                     'message' => $message,
                     'group' => $candidate_group->name,
                     'user' => _G('ME')->name,
@@ -289,7 +295,7 @@ class Review extends \Gini\Controller\CGI
             $params[$opt] = false;
 
             if ($message) {
-                $params['comment'] = [
+                $params[$opt.'_comment'] = [
                     'message' => $message,
                     'group' => $candidate_group->name,
                     'user' => _G('ME')->name,
@@ -377,16 +383,20 @@ class Review extends \Gini\Controller\CGI
 
         $instance = $engine->processInstance($id);
         if (!$instance || !$instance->id) return;
-        $businessKey = $instance->businessKey;
-        $voucher = explode('_', $businessKey)[1];
-        $order = a('order', ['voucher' => $voucher]);
+
+        $params['variableName'] = 'data';
+        $params['processInstanceId'] = $instance->id;
+        $o = $engine->searchVariableInstances($params);
+        $variable_instance = $engine->getVariableInstances($o->token);
+        $order_data = json_decode(current($variable_instance)['value']);
+        $order = a('order', ['voucher' => $order_data->voucher]);
         if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
             'order'=> $order,
             'vTxtTitles' => \Gini\Config::get('haz.types')
         ]));
     }
-
+    
     public function actionTask($id)
     {
         $me = _G('ME');
@@ -428,27 +438,19 @@ class Review extends \Gini\Controller\CGI
             $engine = \Gini\BPM\Engine::of('order_review');
             $instance = $engine->processInstance($instanceID);
             if (!$instance->id) return;
-
-            $params['instance'] = $instance->id;
-            $params['history'] = true;
-
-            $o = $engine->searchTasks($params);
-            $tasks = $engine->getTasks($o->token, 0, $o->total);
+            $params['processInstanceId'] = $instance->id;
+            $params['variableName'] = '$=comment';
+            $o = $engine->searchVariableInstances($params);
+            $variable_instances = $engine->getVariableInstances($o->token);
         } catch (\Gini\BPM\Exception $e) {
         }
 
-        $data = [];
-        foreach ($tasks as $task) {
-            try {
-                $rdata = $task->getVariables('comment');
-                $comment = json_decode($rdata['value']);
-                if (!$comment->message) continue;
-            } catch (\Gini\BPM\Exception $e) {
-                continue;
-            }
-            $data[$task->id] = $comment;
+        $comments = [];
+        foreach ($variable_instances as $variable) {
+            $comment = json_decode($variable['value']);
+            $comments[] = $comment;
         }
-
-        return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/preview', ['tasks' => $data]));
+        return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/preview', ['comments' => $comments]));
     }
 }
+
