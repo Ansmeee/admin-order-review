@@ -49,10 +49,8 @@ class Review extends \Gini\Controller\CGI
 
             foreach ($instances as $instance) {
                 $params['variableName'] = 'data';
-                $params['processInstanceId'] = $instance->id;
-                $o = $engine->searchVariableInstances($params);
-                $variable_instance = $engine->getVariableInstances($o->token);
-                $order_data = json_decode(current($variable_instance)['value']);
+                $rdata = $instance->getVariables($params);
+                $order_data = json_decode(current($rdata)['value']);
                 $object = new \stdClass();
                 $businessKey = $instance->businessKey;
                 $voucher = $order_data->voucher;
@@ -385,10 +383,8 @@ class Review extends \Gini\Controller\CGI
         if (!$instance || !$instance->id) return;
 
         $params['variableName'] = 'data';
-        $params['processInstanceId'] = $instance->id;
-        $o = $engine->searchVariableInstances($params);
-        $variable_instance = $engine->getVariableInstances($o->token);
-        $order_data = json_decode(current($variable_instance)['value']);
+        $rdata = $instance->getVariables($params);
+        $order_data = json_decode(current($rdata)['value']);
         $order = a('order', ['voucher' => $order_data->voucher]);
         if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
@@ -396,7 +392,7 @@ class Review extends \Gini\Controller\CGI
             'vTxtTitles' => \Gini\Config::get('haz.types')
         ]));
     }
-    
+
     public function actionTask($id)
     {
         $me = _G('ME');
@@ -438,18 +434,19 @@ class Review extends \Gini\Controller\CGI
             $engine = \Gini\BPM\Engine::of('order_review');
             $instance = $engine->processInstance($instanceID);
             if (!$instance->id) return;
-            $params['processInstanceId'] = $instance->id;
             $params['variableName'] = '$=comment';
-            $o = $engine->searchVariableInstances($params);
-            $variable_instances = $engine->getVariableInstances($o->token);
+            $rdata = $instance->getVariables($params);
         } catch (\Gini\BPM\Exception $e) {
         }
 
-        $comments = [];
-        foreach ($variable_instances as $variable) {
-            $comment = json_decode($variable['value']);
-            $comments[] = $comment;
+        if (!empty($rdata)) {
+            $comments = [];
+            foreach ($rdata as $variable) {
+                $comment = json_decode($variable['value']);
+                $comments[] = $comment;
+            }
         }
+
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/preview', ['comments' => $comments]));
     }
 }
