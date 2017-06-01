@@ -6,15 +6,15 @@ class Tools extends \Gini\Controller\ClI
 {
     public function __index($args)
     {
-        echo "¶©µ¥ÉóÅúÊı¾İÉı¼¶½Å±¾:\n";
-        echo "ÉóÅú×éÉı¼¶: gini bpm update tools groups \n";
-        echo "ÓÃ»§Éı¼¶: gini bpm update tools users \n";
-        echo "ÉóÅú×é³ÉÔ±Éı¼¶: gini bpm update tools members \n";
+        echo "è®¢å•å®¡æ‰¹æ•°æ®å‡çº§è„šæœ¬:\n";
+        echo "å®¡æ‰¹ç»„å‡çº§: gini bpm update tools groups \n";
+        echo "ç”¨æˆ·å‡çº§: gini bpm update tools users \n";
+        echo "å®¡æ‰¹ç»„æˆå‘˜å‡çº§: gini bpm update tools members \n";
     }
 
     public function actionGroups()
     {
-        //»ñÈ¡ÀúÊ·ÉóÅú×é
+        //è·å–å†å²å®¡æ‰¹ç»„ 
         $his_groups = Those('sjtu/bpm/process/group');
         $conf = \Gini\Config::get('app.order_review_process');
         $engine = \Gini\BPM\Engine::of('order_review');
@@ -118,4 +118,3 @@ class Tools extends \Gini\Controller\ClI
         echo "DONE\n";
     }
 }
-
