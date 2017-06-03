@@ -55,7 +55,7 @@ class Debade extends \Gini\Controller\API
         $steps = $conf['steps'];
         foreach ($steps as $step) {
             if ($step == 'school') continue;
-            $cacheData[$step] = $step;
+            $cacheData[$step] = $processName.'-'.$step;
         }
         $cacheData['data'] = $message['data'];
         $cacheData['key'] = $processName;
