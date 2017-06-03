@@ -14,7 +14,7 @@ class Tools extends \Gini\Controller\ClI
 
     public function actionGroups()
     {
-        //获取历史审批组 
+        //获取历史审批组
         $his_groups = Those('sjtu/bpm/process/group');
         $conf = \Gini\Config::get('app.order_review_process');
         $engine = \Gini\BPM\Engine::of('order_review');
@@ -116,5 +116,123 @@ class Tools extends \Gini\Controller\ClI
             }
         }
         echo "DONE\n";
+    }
+
+    public function actionInstances()
+    {
+        $start = 0;
+        $perpage = 25;
+        $node = \Gini\Config::get('app.node');
+        $conf = \Gini\Config::get('app.order_review_process');
+        $engine = \Gini\BPM\Engine::of('order_review');
+        $process = $engine->process($conf['name']);
+        while (true) {
+            $instances = Those('sjtu/bpm/process/instance')->limit($start, $perpage);
+            $start += $perpage;
+            if (!count($instances)) return;
+            $cacheData = [];
+            foreach ($instances as $instance) {
+                $order_data = $instance->data['data'];
+                $cacheData['data'] = $order_data;
+                $types = [];
+                $items = (array) json_decode($order_data['items']);
+                $types = [];
+                foreach ($items as $item) {
+                    $item = (array) $item;
+                    $casNO = $item['cas_no'];
+                    $chem_types = (array) \Gini\ChemDB\Client::getTypes($casNO)[$casNO];
+                    $types = array_unique(array_merge($types, $chem_types));
+                }
+                $cacheData['customized'] = $order_data['customized'];
+                $cacheData['chemicalTypes'] = $types;
+
+                $key = "labmai-".$node."/".$order_data['group_id'];
+                $info = (array)\Gini\TagDB\Client::of('rpc')->get($key);
+                $cacheData['candidate_group'] = (int)$info['organization']['school_code'];
+
+                $steps = $conf['steps'];
+                foreach ($steps as $step) {
+                    if ($step == 'school') continue;
+                    $cacheData[$step] = $step;
+                }
+                $cacheData['key'] = $conf['name'];
+                try {
+                    $create_instance = $process->start($cacheData);
+                    if ($create_instance->id) {
+                        while (true) {
+                            $search_params['active'] = true;
+                            $search_params['instance'] = $create_instance->id;
+
+                            $o = $engine->searchTasks($search_params);
+                            if (!$o->total) break;
+                            $tasks = $engine->getTasks($o->token, 0, $o->total);
+                            $task = current($tasks);
+                            $assignee = $task->assignee;
+                            $ass = explode('-', $assignee);
+                            $as = end($ass);
+                            $his_tasks = Those('sjtu/bpm/process/task')
+                                ->Whose('instance')->is($instance);
+                            $params = [];
+                            if (count($his_tasks)) {
+                                foreach ($his_tasks as $his_task) {
+                                    $candidate_group = $his_task->candidate_group;
+                                    $cgn = $candidate_group->name;
+                                    $cgs = explode('-', $cgn);
+                                    $gid = end($cgs);
+                                    if ($gid == $as) {
+                                        $opt = $this->_getCurrentStep($assignee);
+                                        if ($his_task->status == \Gini\Process\ITask::STATUS_APPROVED) {
+                                            $params[$opt] = true;
+                                        } else if ($his_task->status == \Gini\Process\ITask::STATUS_UNAPPROVED) {
+                                            $params[$opt] = false;
+                                        }
+
+                                        $message = $his_task->message;
+                                        $date = $his_task->date;
+                                        $group = $his_task->group;
+                                        $user = $his_task->user;
+                                        $params[$opt.'_comment'] = [
+                                            'message' => $message,
+                                            'group' => $group,
+                                            'user' => $user,
+                                            'date' => $date
+                                        ];
+
+                                        $bool = $task->complete($params);
+                                        if ($bool) {
+                                            echo $task->id."-".$task->assignee.'-'.$his_task->id."-o\n";
+                                        } else {
+                                            echo $task->id."-".$task->assignee.'-'.$his_task->id."-x\n";
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        echo $instance->id."--x\n";
+                    }
+                    echo $instance->id."--o\n";
+                } catch (\Gini\BPM\Exception $e) {
+                    echo $instance->id."---x\n";
+                }
+            }
+        }
+
+        echo "DONE \n";
+    }
+
+    private function _getCurrentStep($assignee)
+    {
+        $conf = \Gini\Config::get('app.order_review_process');
+        $steps = $conf['steps'];
+        $step_arr = explode('-', $assignee);
+        foreach ($step_arr as $step) {
+            if (in_array($step, $steps)) {
+                $now_step = $step;
+                break;
+            }
+        }
+        $opt = $now_step.'_'.$conf['option'];
+        return $opt;
     }
 }

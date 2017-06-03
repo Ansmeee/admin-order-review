@@ -24,7 +24,6 @@ class Debade extends \Gini\Controller\API
     {
         if (!isset($message['data']['voucher'])) return;
         $data = $message['data'];
-
         if ($data['status']!=\Gini\ORM\Order::STATUS_NEED_MANAGER_APPROVE) return;
 
         $node = \Gini\Config::get('app.node');
@@ -44,24 +43,22 @@ class Debade extends \Gini\Controller\API
             $chem_types = (array) \Gini\ChemDB\Client::getTypes($casNO)[$casNO];
             $types = array_unique(array_merge($types, $chem_types));
         }
-        
-        $cacheData['customized'] = $data['customized'];
+
+        $cacheData['customized'] = $data['customized'] ? true : false;
         $cacheData['chemicalTypes'] = $types;
 
         //设置 candidate_group
         $key = "labmai-".$node."/".$data['group_id'];
         $info = (array)\Gini\TagDB\Client::of('rpc')->get($key);
-        $cacheData['candidate_group'] = (int)$info['organization']['school_code'];
+        $cacheData['candidate_group'] = $info['organization']['school_code'];
 
         $steps = $conf['steps'];
         foreach ($steps as $step) {
             if ($step == 'school') continue;
             $cacheData[$step] = $step;
         }
-
         $cacheData['data'] = $message['data'];
         $cacheData['key'] = $processName;
-        $cacheData['tag'] = $data['voucher'];
 
         $instanceID = $this->_getOrderInstanceID($processName, $data['voucher']);
         if ($instanceID) {

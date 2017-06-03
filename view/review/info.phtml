@@ -10,10 +10,11 @@
             </div>
             <div class="modal-body">
                 <?php
+                $group = a('group', (int)$order->group_id);
                 $customer_data = [
-                    [T('买方'), $order->group->title],
-                    [T('买方负责人'), $order->group->creator->name],
-                    [T('下单人'), $order->requester->name],
+                    [T('买方'), $order->group->title?:$order->customer->name],
+                    [T('买方负责人'), $group->creator->name],
+                    [T('下单人'), $order->requester->name?:$order->requester_name],
                 ];
                 if ($order->idnumber) {
                     $customer_data = [
@@ -54,10 +55,10 @@
                     </dl>
                     <?php }?>
                 </div>
-                <?php }?>   
-                <?php 
+                <?php }?>
+                <?php
                     $items = $order->items;
-                    $item = current($items);
+                    $item = (array)current($items);
                     if ($item['customized']) {
                 ?>
                 <div class="board-info-block">
@@ -67,6 +68,7 @@
                         <dd>
                             <?php
                             foreach ($order->items as $i => $vItem) {
+                                $vItem = (array)$vItem;
                                 if ($license_images = $vItem['license_images']) {
                                     foreach ((array)$license_images as $index => $license_image) {
                                         $name = $license_image['name'];
@@ -82,6 +84,7 @@
                         <dd>
                             <?php
                             foreach ($order->items as $i => $vItem) {
+                                $vItem = (array) $vItem;
                                 if ($extra_images = $vItem['extra_images']) {
                                     foreach ((array)$extra_images as $index => $extra_image) {
                                         $name = $extra_image['name'];
@@ -107,6 +110,7 @@
                         <div class="col-xs-1 text-right"><?=H(T('金额'))?></div>
                     </div>
                     <?php foreach ((array)$order->items as $vItem) { ?>
+                    <?php $vItem = (array) $vItem;?>
                     <div class="row board-table-row board-table-li">
                         <div class="col-xs-3">
                             <?=\Gini\ORM\Product::showTagsHTML($vItem['product_types'], 'full')?>

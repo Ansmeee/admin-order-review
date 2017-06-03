@@ -19,17 +19,19 @@
         <ul class="list-unstyled ul-list clearfix row<?=$vAllowOperate ? '' : ' ul-list-noop'?>">
             <li class="ul-list-li-ctime"><?=H(date('Y-m-d H:i', strtotime($vOrder->ctime?:$vOrder->request_date)))?></li>
             <li class="ul-list-li-voucher"><a class="app-link-dialog-handler" href="ajax/review/instance/<?=$vID?>"><?=H($vOrder->voucher)?></a></li>
-            <li class="ul-list-li-customer" title="<?=H($vOrder->group->title)?>"><?=H($vOrder->group->title)?></li>
+            <li class="ul-list-li-customer" title="<?=H($vOrder->group->title?:$vOrder->customer->name)?>"><?=H($vOrder->group->title?:$vOrder->customer->name)?></li>
             <li class="ul-list-li-vendor" title="<?=H($vOrder->vendor_name?:$vOrder->vendor->name)?>"><?=H($vOrder->vendor_name?:$vOrder->vendor->name)?></li>
             <li class="ul-list-li-product ul-list-li-product-strong">
             <?php
-            $vItems = (array)$vOrder->items;
+            $vItems = $vOrder->items;
+
             $tmpI = 1;
             foreach ((array)$vItems as $vPData) {?>
+                <?php $vPData = (array) $vPData;?>
                 <?php if ($tmpI++>3) { ?>
                 <div>...</div>
                 <?php break;} else { ?>
-                <div class="text-ellipsis" title="<?=H($vPData['name'])?> * <?=H($vPData['quantity'])?>">
+                <div class="text-ellipsis" title="<?=H($vPData->name)?> * <?=H($vPData->quantity)?>">
                     <?php $vCasNO = $vPData['cas_no'];?>
                     <?php if ($vPData['customized']) {?>
                     <i data-require="utils/toggle-tooltip" class="fa fa-info-circle" data-toggle="tooltip" data-placement="top" title="<?=H(T('自购理由: %reason', ['%reason'=> $vPData['reason']]))?>"></i>

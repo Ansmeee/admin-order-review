@@ -48,14 +48,9 @@ class Review extends \Gini\Controller\CGI
             $objects = [];
 
             foreach ($instances as $instance) {
-                $params['variableName'] = 'data';
-                $rdata = $instance->getVariables($params);
-                $order_data = json_decode(current($rdata)['value']);
                 $object = new \stdClass();
-                $businessKey = $instance->businessKey;
-                $voucher = $order_data->voucher;
-                $object->order = a('order', ['voucher' => $voucher]);
                 $object->instance = $instance;
+                $object->order = $this->_getOrderObject($instance,true);
                 $object->status = $this->_getInstanceStatus($engine, $instance);
                 $objects[$instance->id] = $object;
             }
@@ -124,11 +119,10 @@ class Review extends \Gini\Controller\CGI
         $orders = [];
         foreach ($tasks as $task) {
             try {
-                $data = $task->getVariables('data');
-                $object = json_decode($data['value']);
                 $instance = $engine->processInstance($task->processInstanceId);
-                $object->task_status = $this->_getInstanceStatus($engine, $instance);
+                $object = $this->_getOrderObject($instance);
                 $object->instance = $instance;
+                $object->task_status = $this->_getInstanceStatus($engine, $instance);
                 $orders[$task->id] = $object;
             } catch (\Gini\BPM\Exception $e) {
                 continue;
@@ -141,6 +135,23 @@ class Review extends \Gini\Controller\CGI
             'total'=> ceil(($o->total)/$limit),
             'vTxtTitles' => \Gini\Config::get('haz.types')
         ]));
+    }
+
+    private function _getOrderObject($instance, $force=false)
+    {
+        $params['variableName'] = 'data';
+        $rdata = $instance->getVariables($params);
+        $data = json_decode(current($rdata)['value']);
+
+        if ($force) {
+            $order = a('order', ['voucher' => $data->voucher]);
+        }
+
+        if (!$order || !$order->id) {
+            $order = $data;
+        }
+
+        return $order;
     }
 
     public function actionGetOPForm()
@@ -259,15 +270,12 @@ class Review extends \Gini\Controller\CGI
             $candidate_group = $engine->group($assignee);
             $opt = $this->_getCurrentStep($assignee);
             $params[$opt] = true;
-
-            if ($message) {
-                $params[$opt.'_comment'] = [
-                    'message' => $message,
-                    'group' => $candidate_group->name,
-                    'user' => _G('ME')->name,
-                    'date' => date('Y-m-d H:i:s')
-                ];
-            }
+            $params[$opt.'_comment'] = [
+                'message' => $message,
+                'group' => $candidate_group->name,
+                'user' => _G('ME')->name,
+                'date' => date('Y-m-d H:i:s')
+            ];
 
             $bool = $task->complete($params);
             if ($bool) {
@@ -291,15 +299,12 @@ class Review extends \Gini\Controller\CGI
             $candidate_group = $engine->group($assignee);
             $opt = $this->_getCurrentStep($assignee);
             $params[$opt] = false;
-
-            if ($message) {
-                $params[$opt.'_comment'] = [
-                    'message' => $message,
-                    'group' => $candidate_group->name,
-                    'user' => _G('ME')->name,
-                    'date' => date('Y-m-d H:i:s')
-                ];
-            }
+            $params[$opt.'_comment'] = [
+                'message' => $message,
+                'group' => $candidate_group->name,
+                'user' => _G('ME')->name,
+                'date' => date('Y-m-d H:i:s')
+            ];
 
             $bool = $task->complete($params);
             if ($bool) {
@@ -381,11 +386,7 @@ class Review extends \Gini\Controller\CGI
 
         $instance = $engine->processInstance($id);
         if (!$instance || !$instance->id) return;
-
-        $params['variableName'] = 'data';
-        $rdata = $instance->getVariables($params);
-        $order_data = json_decode(current($rdata)['value']);
-        $order = a('order', ['voucher' => $order_data->voucher]);
+        $order = $this->_getOrderObject($instance);
         if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
             'order'=> $order,
@@ -407,9 +408,8 @@ class Review extends \Gini\Controller\CGI
             $engine = \Gini\BPM\Engine::of('order_review');
             $task = $engine->task($id);
             if (!$task->id) return;
-            $rdata = $task->getVariables('data');
-            $order_data = (array) json_decode($rdata['value']);
-            $order = a('order', ['voucher'=> $order_data['voucher']]);
+            $instance = $engine->processInstance($task->processInstanceId);
+            $order = $this->_getOrderObject($instance);
             if (!$order->id) return;
         } catch (\Gini\BPM\Exception $e) {
         }
@@ -450,4 +450,3 @@ class Review extends \Gini\Controller\CGI
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/preview', ['comments' => $comments]));
     }
 }
-
