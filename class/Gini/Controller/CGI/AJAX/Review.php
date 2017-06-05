@@ -262,28 +262,46 @@ class Review extends \Gini\Controller\CGI
         return $opt;
     }
 
+    private function _addComment($engine, $task, array $comment) {
+        $his_comment = [];
+        $instance = $engine->processInstance($task->processInstanceId);
+        $params['variableName'] = 'comment';
+        $rdata = $instance->getVariables($params);
+        if ($rdata) {
+            $his_comment = json_decode(current($rdata)['value']);
+        }
+        array_push($his_comment, $comment);
+        $params['value'] = json_encode($his_comment);
+        $params['type'] = 'Json';
+        $result = $instance->setVariable($params);
+        return $result;
+    }
+
     private function _approve($engine, $task, $message = '') {
+        $comment = [];
         try {
             $rData = $task->getVariables('data');
             $order_data = (array) json_decode($rData['value']);
             $assignee = $task->assignee;
             $candidate_group = $engine->group($assignee);
-            $opt = $this->_getCurrentStep($assignee);
-            $params[$opt] = true;
-            $params[$opt.'_comment'] = [
+            $comment = [
                 'message' => $message,
                 'group' => $candidate_group->name,
                 'user' => _G('ME')->name,
                 'date' => date('Y-m-d H:i:s')
             ];
-
-            $bool = $task->complete($params);
-            if ($bool) {
-                $data['opt'] = T('审核通过');
-                $data['message'] = $message;
-                $data['candidate_group'] = $candidate_group->name;
-                $data['order_data'] = $order_data;
-                $this->_doUpdate($data);
+            $res = $this->_addComment($engine, $task, $comment);
+            if ($res) {
+                $opt = $this->_getCurrentStep($assignee);
+                $params[$opt] = true;
+                $bool = $task->complete($params);
+                if ($bool) {
+                    $data['opt'] = T('审核通过');
+                    $data['message'] = $message;
+                    $data['candidate_group'] = $candidate_group->name;
+                    $data['order_data'] = $order_data;
+                    $this->_doUpdate($data);
+                }
             }
         } catch (\Gini\BPM\Exception $e) {
         }
@@ -297,22 +315,24 @@ class Review extends \Gini\Controller\CGI
             $order_data = (array) json_decode($rData['value']);
             $assignee = $task->assignee;
             $candidate_group = $engine->group($assignee);
-            $opt = $this->_getCurrentStep($assignee);
-            $params[$opt] = false;
-            $params[$opt.'_comment'] = [
+            $comment = [
                 'message' => $message,
                 'group' => $candidate_group->name,
                 'user' => _G('ME')->name,
                 'date' => date('Y-m-d H:i:s')
             ];
-
-            $bool = $task->complete($params);
-            if ($bool) {
-                $data['opt'] = T('拒绝');
-                $data['message'] = $message;
-                $data['candidate_group'] = $candidate_group->name;
-                $data['order_data'] = $order_data;
-                $this->_doUpdate($data);
+            $res = $this->_addComment($engine, $task, $comment);
+            if ($res) {
+                $opt = $this->_getCurrentStep($assignee);
+                $params[$opt] = false;
+                $bool = $task->complete($params);
+                if ($bool) {
+                    $data['opt'] = T('拒绝');
+                    $data['message'] = $message;
+                    $data['candidate_group'] = $candidate_group->name;
+                    $data['order_data'] = $order_data;
+                    $this->_doUpdate($data);
+                }
             }
         } catch (\Gini\BPM\Exception $e) {
         }
@@ -434,19 +454,11 @@ class Review extends \Gini\Controller\CGI
             $engine = \Gini\BPM\Engine::of('order_review');
             $instance = $engine->processInstance($instanceID);
             if (!$instance->id) return;
-            $params['variableName'] = '$=comment';
+            $params['variableName'] = 'comment';
             $rdata = $instance->getVariables($params);
+            $comments = json_decode(current($rdata)['value']);
         } catch (\Gini\BPM\Exception $e) {
         }
-
-        if (!empty($rdata)) {
-            $comments = [];
-            foreach ($rdata as $variable) {
-                $comment = json_decode($variable['value']);
-                $comments[] = $comment;
-            }
-        }
-
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/preview', ['comments' => $comments]));
     }
 }
