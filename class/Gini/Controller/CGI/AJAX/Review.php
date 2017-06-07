@@ -64,6 +64,11 @@ class Review extends \Gini\Controller\CGI
 
             $search_params['processInstanceIds'] = array_unique($instanceIds);
             $search_params['history'] = true;
+            $sorting[] = [
+                'sortBy' => 'startTime',
+                'sortOrder' => 'desc'
+            ];
+            $search_params['sorting'] = $sorting;
             $o = $engine->searchProcessInstances($search_params);
             $instances = $engine->getProcessInstances($o->token, $start, $limit);
 
@@ -125,8 +130,12 @@ class Review extends \Gini\Controller\CGI
             foreach ($groups as $group) {
                 $search_params['candidateGroups'][] = $group->id;
             }
-
             $search_params['includeAssignedTasks'] = true;
+            $sorting[] = [
+                'sortBy' => 'created',
+                'sortOrder' => 'desc'
+            ];
+            $search_params['sorting'] = $sorting;
             $o = $engine->searchTasks($search_params);
             $tasks = $engine->getTasks($o->token, $start, $limit);
             return $tasks;
