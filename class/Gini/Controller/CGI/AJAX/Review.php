@@ -50,7 +50,7 @@ class Review extends \Gini\Controller\CGI
                 $params['group'] = $group->id;
                 $params['history'] = true;
                 $o = $engine->searchTasks($params);
-                $tasks = $engine->getTasks($o->token, 0, $o->total);
+                $tasks = $engine->getTasks($o->token, $start, $limit);
                 if (count($tasks)) {
                     foreach ($tasks as $task) {
                         $instanceIds[] = $task->processInstanceId;
@@ -526,4 +526,3 @@ class Review extends \Gini\Controller\CGI
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/preview', ['comments' => $comments]));
     }
 }
-
