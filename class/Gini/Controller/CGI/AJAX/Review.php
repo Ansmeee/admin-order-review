@@ -35,24 +35,36 @@ class Review extends \Gini\Controller\CGI
             list($process, $engine) = $this->_getProcessEngine();
             if (!$process->id) return;
 
-            $user_groups = [];
             $user = $me->isAllowedTo('管理权限') ? null : $me;
-            if ($user->id) {
-                $group_search_params['member'] = $user->id;
-                $group_search_params['type'] = $process->id;
-                $o = $engine->searchGroups($group_search_params);
-                $groups = $engine->getGroups($o->token, 0, $o->total);
-                if (!count($groups)) {
-                    return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
-                }
-                foreach ($groups as $group) {
-                    $user_groups[] = $group->id;
+            $group_search_params['member'] = $user->id;
+            $group_search_params['type'] = $process->id;
+            $o = $engine->searchGroups($group_search_params);
+            $groups = $engine->getGroups($o->token, 0, $o->total);
+            if (!count($groups)) {
+                return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
+            }
+
+            $instanceIds = [];
+            foreach ($groups as $group) {
+                $tasks = [];
+                $params['group'] = $group->id;
+                $params['history'] = true;
+                $o = $engine->searchTasks($params);
+                $tasks = $engine->getTasks($o->token, 0, $o->total);
+                if (count($tasks)) {
+                    foreach ($tasks as $task) {
+                        $instanceIds[] = $task->processInstanceId;
+                    }
                 }
             }
 
-            $params['process'] = $process->id;
-            $params['history'] = true;
-            $o = $engine->searchProcessInstances($params);
+            if (!count($instanceIds)) {
+                return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
+            }
+
+            $search_params['processInstanceIds'] = array_unique($instanceIds);
+            $search_params['history'] = true;
+            $o = $engine->searchProcessInstances($search_params);
             $instances = $engine->getProcessInstances($o->token, $start, $limit);
 
             if (!count($instances)) {
@@ -61,12 +73,6 @@ class Review extends \Gini\Controller\CGI
             $objects = [];
 
             foreach ($instances as $instance) {
-                if ($user->id) {
-                    $rdata = $instance->getVariables(['variableName' => 'candidate_groups']);
-                    if (!is_array($rdata) || !count($rdata)) continue;
-                    $candidate_groups = json_decode(current($rdata)['value']);
-                    if (!array_intersect($candidate_groups, $user_groups)) continue;
-                }
                 $object = new \stdClass();
                 $object->instance = $instance;
                 $object->order = $this->_getOrderObject($instance,true);

@@ -118,24 +118,31 @@ class Tools extends \Gini\Controller\ClI
         echo "DONE\n";
     }
 
-    public function actionInstances()
+    public function actionUpdateInstances()
     {
         $start = 0;
         $perpage = 25;
         $node = \Gini\Config::get('app.node');
+
+        $his_process_name = 'order-review-process';
+        $his_engine = \Gini\Process\Engine::of('default');
+        $his_process = $his_engine->getProcess($his_process_name);
+
         $conf = \Gini\Config::get('app.order_review_process');
         $engine = \Gini\BPM\Engine::of('order_review');
         $process = $engine->process($conf['name']);
         while (true) {
-            $instances = Those('sjtu/bpm/process/instance')->limit($start, $perpage);
+            $instances = Those('sjtu/bpm/process/instance')
+                ->Whose('process')->is($his_process)
+                ->andWhose('status')->isNot(\Gini\Process\IInstance::STATUS_END)
+                ->limit($start, $perpage);
             $start += $perpage;
             if (!count($instances)) return;
-            $cacheData = [];
             foreach ($instances as $instance) {
                 $order_data = $instance->data['data'];
-                $cacheData['data'] = $order_data;
-                $types = [];
                 $items = (array) json_decode($order_data['items']);
+                $order_data['items'] = $items;
+                $cacheData['data'] = $order_data;
                 $types = [];
                 foreach ($items as $item) {
                     $item = (array) $item;
@@ -143,7 +150,7 @@ class Tools extends \Gini\Controller\ClI
                     $chem_types = (array) \Gini\ChemDB\Client::getTypes($casNO)[$casNO];
                     $types = array_unique(array_merge($types, $chem_types));
                 }
-                $cacheData['customized'] = $order_data['customized'];
+                $cacheData['customized'] = $order_data['customized'] ? true : false;
                 $cacheData['chemicalTypes'] = $types;
 
                 $key = "labmai-".$node."/".$order_data['group_id'];
@@ -159,61 +166,10 @@ class Tools extends \Gini\Controller\ClI
                 try {
                     $create_instance = $process->start($cacheData);
                     if ($create_instance->id) {
-                        while (true) {
-                            $search_params['active'] = true;
-                            $search_params['instance'] = $create_instance->id;
-
-                            $o = $engine->searchTasks($search_params);
-                            if (!$o->total) break;
-                            $tasks = $engine->getTasks($o->token, 0, $o->total);
-                            $task = current($tasks);
-                            $assignee = $task->assignee;
-                            $ass = explode('-', $assignee);
-                            $as = end($ass);
-                            $his_tasks = Those('sjtu/bpm/process/task')
-                                ->Whose('instance')->is($instance);
-                            $params = [];
-                            if (count($his_tasks)) {
-                                foreach ($his_tasks as $his_task) {
-                                    $candidate_group = $his_task->candidate_group;
-                                    $cgn = $candidate_group->name;
-                                    $cgs = explode('-', $cgn);
-                                    $gid = end($cgs);
-                                    if ($gid == $as) {
-                                        $opt = $this->_getCurrentStep($assignee);
-                                        if ($his_task->status == \Gini\Process\ITask::STATUS_APPROVED) {
-                                            $params[$opt] = true;
-                                        } else if ($his_task->status == \Gini\Process\ITask::STATUS_UNAPPROVED) {
-                                            $params[$opt] = false;
-                                        }
-
-                                        $message = $his_task->message;
-                                        $date = $his_task->date;
-                                        $group = $his_task->group;
-                                        $user = $his_task->user;
-                                        $params[$opt.'_comment'] = [
-                                            'message' => $message,
-                                            'group' => $group,
-                                            'user' => $user,
-                                            'date' => $date
-                                        ];
-
-                                        $bool = $task->complete($params);
-                                        if ($bool) {
-                                            echo $task->id."-".$task->assignee.'-'.$his_task->id."-o\n";
-                                        } else {
-                                            echo $task->id."-".$task->assignee.'-'.$his_task->id."-x\n";
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        echo $instance->id."--x\n";
+                        echo $instance->id."--".$create_instance->id."--o\n";
                     }
-                    echo $instance->id."--o\n";
                 } catch (\Gini\BPM\Exception $e) {
-                    echo $instance->id."---x\n";
+                    echo $instance->id."--x\n";
                 }
             }
         }
@@ -221,18 +177,67 @@ class Tools extends \Gini\Controller\ClI
         echo "DONE \n";
     }
 
-    private function _getCurrentStep($assignee)
+    public function actionUpdateFinishedInstances()
     {
-        $conf = \Gini\Config::get('app.order_review_process');
-        $steps = $conf['steps'];
-        $step_arr = explode('-', $assignee);
-        foreach ($step_arr as $step) {
-            if (in_array($step, $steps)) {
-                $now_step = $step;
-                break;
+        $start = 0;
+        $perpage = 25;
+        $node = \Gini\Config::get('app.node');
+
+        $his_process_name = 'order-review-process';
+        $his_engine = \Gini\Process\Engine::of('default');
+        $his_process = $his_engine->getProcess($his_process_name);
+
+        $processName = 'update-his-instances';
+        $engine = \Gini\BPM\Engine::of('order_review');
+        $process = $engine->process($processName);
+        while (true) {
+            $instances = Those('sjtu/bpm/process/instance')
+                ->Whose('process')->is($his_process)
+                ->andWhose('status')->is(\Gini\Process\IInstance::STATUS_END)
+                ->limit($start, $perpage);
+            $start += $perpage;
+            if (!count($instances)) return;
+            foreach ($instances as $instance) {
+                $comment = [];
+                $cacheData = [];
+                $candidate_groups = [];
+                $order_data = $instance->data['data'];
+                $items = (array) json_decode($order_data['items']);
+                $order_data['items'] = $items;
+                $cacheData['data'] = $order_data;
+                $his_tasks = Those('sjtu/bpm/process/task')
+                    ->Whose('instance')->is($instance)
+                    ->orderBy('ctime', 'desc');
+                foreach ($his_tasks as $his_task) {
+                    $com = [];
+                    if ($his_task->user) {
+                        $com = [
+                            'message' => $his_task->message,
+                            'group' => $his_task->group,
+                            'user' => $his_task->user,
+                            'date' => $his_task->date
+                        ];
+                    }
+
+                    $comment[] = $com;
+                    if ($his_task->candidate_group->id) {
+                        $candidate_groups[] = $conf['name'].'-'.$his_task->candidate_group->name;
+                    }
+                }
+
+                $cacheData['comment'] = $comment;
+                $cacheData['candidate_groups'] = $candidate_groups;
+                $cacheData['key'] = $processName;
+                try {
+                    $create_instance = $process->start($cacheData);
+                    if ($create_instance->id) {
+                        echo $instance->id.'---'.$create_instance->id."---o\n";
+                    }
+                } catch (\Gini\BPM\Exception $e) {
+                   echo $instance->id."---x\n";
+                }
             }
         }
-        $opt = $now_step.'_'.$conf['option'];
-        return $opt;
     }
 }
+
