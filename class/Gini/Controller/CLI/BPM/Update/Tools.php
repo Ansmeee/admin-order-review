@@ -155,7 +155,7 @@ class Tools extends \Gini\Controller\ClI
 
                 $key = "labmai-".$node."/".$order_data['group_id'];
                 $info = (array)\Gini\TagDB\Client::of('rpc')->get($key);
-                $cacheData['candidate_group'] = (int)$info['organization']['school_code'];
+                $cacheData['candidate_group'] = $info['organization']['school_code'];
 
                 $steps = $conf['steps'];
                 foreach ($steps as $step) {
