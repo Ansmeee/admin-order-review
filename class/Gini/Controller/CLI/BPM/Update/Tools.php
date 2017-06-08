@@ -7,41 +7,9 @@ class Tools extends \Gini\Controller\ClI
     public function __index($args)
     {
         echo "订单审批数据升级脚本:\n";
-        echo "审批组升级: gini bpm update tools groups \n";
+        echo "请务必先执行 gini bpm update tools users ！\n";
         echo "用户升级: gini bpm update tools users \n";
-        echo "审批组成员升级: gini bpm update tools members \n";
-    }
-
-    public function actionGroups()
-    {
-        //获取历史审批组
-        $his_groups = Those('sjtu/bpm/process/group');
-        $conf = \Gini\Config::get('app.order_review_process');
-        $engine = \Gini\BPM\Engine::of('order_review');
-        foreach ($his_groups as $his_group) {
-            try {
-                $key = $his_group->name;
-                $arr = explode('-', $key);
-
-                if (in_array('school', $arr)) {
-                    $params['id'] = $conf['name'].'-'.$key;
-                } else {
-                    $params['id'] = $key;
-                }
-                $params['name'] = $his_group->title;
-                $params['type'] = $conf['name'];
-                $group = $engine->group();
-                $bool = $group->create($params);
-                if ($bool) {
-                    echo $his_group->name."--o \n";
-                } else {
-                    echo $his_group->name."--x \n";
-                }
-            } catch (\Gini\BPM\Exception $e) {
-            }
-        }
-
-        echo "DONE \n";
+        echo "审批组升级: gini bpm update tools groups \n";
     }
 
     public function actionUsers()
@@ -82,40 +50,52 @@ class Tools extends \Gini\Controller\ClI
         }
     }
 
-    public function actionMembers()
+    public function actionGroups()
     {
-        $start = 0;
-        $perpage = 25;
+        //获取历史审批组
+        $his_process_name = 'order-review-process';
+        $his_engine = \Gini\Process\Engine::of('default');
+        $his_process = $his_engine->getProcess($his_process_name);
+
+        $his_groups = Those('sjtu/bpm/process/group')
+            ->Whose('process')->is($his_process);
         $conf = \Gini\Config::get('app.order_review_process');
         $engine = \Gini\BPM\Engine::of('order_review');
-        while (true) {
-            $his_members = Those('sjtu/bpm/process/group/user')->limit($start, $perpage);
-            $start += $perpage;
-            if (!count($his_members)) return ;
 
-            foreach ($his_members as $his_member) {
-                try {
-                    $key = $his_member->group->name;
-                    $arr = explode('-', $key);
+        foreach ($his_groups as $his_group) {
+            try {
+                $key = $his_group->name;
+                $arr = explode('-', $key);
 
-                    if (in_array('school', $arr)) {
-                        $gid = $conf['name'].'-'.$key;
-                    } else {
-                        $gid = $key;
-                    }
-                    $group = $engine->group($gid);
-                    $bool = $group->addMember($his_member->user->id);
-                    if ($bool) {
-                        echo $his_member->id."--o\n";
-                    } else {
-                        echo $his_member->id."--x\n";
-                    }
-                } catch (\Gini\BPM\Exception $e) {
-                    continue;
+                if (in_array('school', $arr)) {
+                    $params['id'] = $conf['name'].'-'.$key;
+                } else {
+                    $params['id'] = $key;
                 }
+                $params['name'] = $his_group->title;
+                $params['type'] = $conf['name'];
+                $group = $engine->group();
+                $bool = $group->create($params);
+                if ($bool) {
+                    echo $his_group->name."--o \n";
+                    $users = Those('sjtu/bpm/process/group/user')
+                        ->Whose('group')->is($his_group);
+                    foreach ($users as $user) {
+                        $ret = $group->addMember($user->id);
+                        if (!$ret) {
+                            echo $his_group->name."---".$user->id."--x \n";
+                            continue;
+                        }
+                        echo $his_group->name."---".$user->id."--o \n";
+                    }
+                } else {
+                    echo $his_group->name."--x \n";
+                }
+            } catch (\Gini\BPM\Exception $e) {
             }
         }
-        echo "DONE\n";
+
+        echo "DONE \n";
     }
 
     public function actionUpdateInstances()
@@ -225,12 +205,20 @@ class Tools extends \Gini\Controller\ClI
                     }
                 }
 
+                $cacheData['candidate_groups'] = implode(',', $candidate_groups);
                 $cacheData['comment'] = $comment;
-                $cacheData['candidate_groups'] = $candidate_groups;
                 $cacheData['key'] = $processName;
                 try {
                     $create_instance = $process->start($cacheData);
                     if ($create_instance->id) {
+                        $search_params['instance'] =  $create_instance->id;
+                        $result = $engine->searchTasks($search_params);
+                        $tasks = $engine->getTasks($result->token, 0, $result->total);
+                        $task = current($tasks);
+                        if (!$task->complete()) {
+                            echo $instance->id.'---'.$create_instance->id."---task---".$task->id."---x\n";
+                            continue;
+                        }
                         echo $instance->id.'---'.$create_instance->id."---o\n";
                     }
                 } catch (\Gini\BPM\Exception $e) {

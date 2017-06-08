@@ -23,10 +23,24 @@ class Index extends Layout\Board{
         $this->view->body = V('review/index', $vars);
     }
 
-    public function actionHistory()
+    public function actionHistory($group = '')
     {
+        $me = _G('ME');
+        try {
+            $conf = \Gini\Config::get('app.order_review_process');
+            $engine = \Gini\BPM\Engine::of('order_review');
+            $process = $engine->process($conf['name']);
+            $params['member'] = $me->id;
+            $params['type'] = $process->id;
+            $o = $engine->searchGroups($params);
+            $groups = $engine->getGroups($o->token, 0, $o->total);
+            $current_group = $engine->group($group);
+        } catch (\Gini\BPM\Exception $e) {
+        }
         $vars = [
-            'type'=> 'history'
+            'type'=> 'history',
+            'current_group' => $current_group->id ? $current_group : current($groups),
+            'groups' => $groups
         ];
 
         $this->view->body = V('review/index', $vars);

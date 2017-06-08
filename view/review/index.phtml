@@ -5,7 +5,7 @@
                 <i class="fa fa-cog" style="margin-right:10px;"></i><span class="caret"></span>
             </button>
             <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
-                <?php 
+                <?php
                 $me = _G('ME');
                 if ($me->isAllowedTo('管理权限')) {
                 ?>
@@ -15,11 +15,26 @@
             </ul>
         </div>
     </div>
+    <?php if ($type == 'history' && count($groups)) { ?>
+        <div class="pull-right" style="margin-top:13px;">
+            <div class="dropdown" style="margin-left:40px;margin-right:20px;">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                    <?= H($current_group->name)?>&nbsp;&nbsp;<span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
+                    <?php foreach ($groups as $group) { ?>
+                        <li class="show-settings text-center" style="cursor:pointer;"><a href="history/<?= H($group->id)?>"><?= H($group->name) ?></a></li>
+                    <?php }?>
+                </ul>
+            </div>
+        </div>
+    <?php } ?>
     <ul class="board-header-ul list-unstyled">
         <li <?=$type == 'pending' ? 'class="active"' : '' ?>><a href="pending"><?= H(T('待审采购')) ?></a></li>
         <li <?=$type == 'history' ? 'class="active"' : '' ?>><a href="history"><?= H(T('审核历史')) ?></a></li>
     </ul>
 </div>
 <div class="board-content">
-    <?= \Gini\CGI::request("ajax/review/more/1/{$type}")->execute()->content() ?>
+    <?= \Gini\CGI::request("ajax/review/more/1/{$type}/{$current_group->id}")->execute()->content() ?>
 </div>
+
