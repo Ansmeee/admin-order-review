@@ -71,16 +71,17 @@ class Tools extends \Gini\Controller\ClI
                 $group = $engine->group();
                 $bool = $group->create($params);
                 if ($bool) {
+                    $group = $engine->group($params['id']);
                     echo $his_group->name."--o \n";
                     $group_users = Those('sjtu/bpm/process/group/user')
                         ->Whose('group')->is($his_group);
                     foreach ($group_users as $group_user) {
                         $ret = $group->addMember($group_user->user->id);
                         if (!$ret) {
-                            echo $his_group->name."---".$group_user->user->id."--x \n";
+                            echo $group->id."---".$group_user->user->id."--x \n";
                             continue;
                         }
-                        echo $his_group->name."---".$group_user->user->id."--o \n";
+                        echo $group->id."---".$group_user->user->id."--o \n";
                     }
                 } else {
                     echo $his_group->name."--x \n";
@@ -222,4 +223,3 @@ class Tools extends \Gini\Controller\ClI
         }
     }
 }
-
