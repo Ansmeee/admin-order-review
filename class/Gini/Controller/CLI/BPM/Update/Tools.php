@@ -162,7 +162,7 @@ class Tools extends \Gini\Controller\ClI
         $his_engine = \Gini\Process\Engine::of('default');
         $his_process = $his_engine->getProcess($his_process_name);
 
-        $processName = 'update-his-instances';
+        $processName = 'update-his-instance';
         $engine = \Gini\BPM\Engine::of('order_review');
         $process = $engine->process($processName);
         while (true) {
