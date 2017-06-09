@@ -65,28 +65,22 @@ class Tools extends \Gini\Controller\ClI
         foreach ($his_groups as $his_group) {
             try {
                 $key = $his_group->name;
-                $arr = explode('-', $key);
-
-                if (in_array('school', $arr)) {
-                    $params['id'] = $conf['name'].'-'.$key;
-                } else {
-                    $params['id'] = $key;
-                }
+                $params['id'] = $conf['name'].'-'.$key;
                 $params['name'] = $his_group->title;
                 $params['type'] = $conf['name'];
                 $group = $engine->group();
                 $bool = $group->create($params);
                 if ($bool) {
                     echo $his_group->name."--o \n";
-                    $users = Those('sjtu/bpm/process/group/user')
+                    $group_users = Those('sjtu/bpm/process/group/user')
                         ->Whose('group')->is($his_group);
-                    foreach ($users as $user) {
-                        $ret = $group->addMember($user->id);
+                    foreach ($group_users as $group_user) {
+                        $ret = $group->addMember($group_user->user->id);
                         if (!$ret) {
-                            echo $his_group->name."---".$user->id."--x \n";
+                            echo $his_group->name."---".$group_user->user->id."--x \n";
                             continue;
                         }
-                        echo $his_group->name."---".$user->id."--o \n";
+                        echo $his_group->name."---".$group_user->user->id."--o \n";
                     }
                 } else {
                     echo $his_group->name."--x \n";
