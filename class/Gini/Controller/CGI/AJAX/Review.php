@@ -32,14 +32,19 @@ class Review extends \Gini\Controller\CGI
         $start = ($page - 1) * $limit;
         $instances = [];
         $objects = [];
+
+        $user = $me->isAllowedTo('管理权限') ? null : $me;
         if (!$current_group) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
 
         try {
             list($process, $engine) = $this->_getProcessEngine();
             $tasks = [];
             $candidateGroup = $engine->group($current_group);
+            $isMemberOfGroup = $candidateGroup->hasMember($me->id);
             if ($candidateGroup->type != $process->id) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
-            $params['candidateGroup'] = $candidateGroup->id;
+            if ($user->id && !$isMemberOfGroup) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
+
+            $params['candidateGroup'][] = $candidateGroup->id;
             $params['history'] = true;
             $result = $engine->searchTasks($params);
             $tasks = $engine->getTasks($result->token, $start, $limit);
