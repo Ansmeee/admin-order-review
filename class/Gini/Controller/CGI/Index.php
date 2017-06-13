@@ -26,11 +26,12 @@ class Index extends Layout\Board{
     public function actionHistory($group = '')
     {
         $me = _G('ME');
+        $user = $me->isAllowedTo('管理权限') ? null : $me;
         try {
             $conf = \Gini\Config::get('app.order_review_process');
             $engine = \Gini\BPM\Engine::of('order_review');
             $process = $engine->process($conf['name']);
-            $params['member'] = $me->id;
+            $params['member'] = $user->id;
             $params['type'] = $process->id;
             $o = $engine->searchGroups($params);
             $groups = $engine->getGroups($o->token, 0, $o->total);

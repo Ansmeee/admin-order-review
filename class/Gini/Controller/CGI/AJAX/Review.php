@@ -36,22 +36,27 @@ class Review extends \Gini\Controller\CGI
 
         try {
             list($process, $engine) = $this->_getProcessEngine();
-            $candidate_group = $engine->group($current_group);
             $tasks = [];
-            $params['group'] = $candidate_group->id;
+            $candidateGroup = $engine->group($current_group);
+            if ($candidateGroup->type != $process->id) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
+            $params['candidateGroup'] = $candidateGroup->id;
             $params['history'] = true;
-            $sorting[] = [
-                'sortBy' => 'startTime',
-                'sortOrder' => 'desc'
-            ];
-            $params['sorting'] = $sorting;
             $result = $engine->searchTasks($params);
             $tasks = $engine->getTasks($result->token, $start, $limit);
             if (!count($tasks)) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
 
             foreach ($tasks as $task) {
-                $instances[] = $engine->processInstance($task->processInstanceId);
+                $instanceIds[] = $task->processInstanceId;
             }
+
+            $sortBy = [
+                'startTime' => 'desc'
+            ];
+            $searchInstanceParams['sortBy'] = $sortBy;
+            $searchInstanceParams['history'] = true;
+            $searchInstanceParams['processInstance'] = $instanceIds;
+            $rdata = $engine->searchProcessInstances($searchInstanceParams);
+            $instances = $engine->getProcessInstances($rdata->token, 0, $rdata->total);
 
             foreach ($instances as $instance) {
                 $object = new \stdClass();
@@ -80,7 +85,7 @@ class Review extends \Gini\Controller\CGI
                 return T('已结束');
             }
 
-            $params['instance'] = $instance->id;
+            $params['processInstance'] = $instance->id;
             $o = $engine->searchTasks($params);
             $tasks = $engine->getTasks($o->token, 0, $o->total);
             $task = current($tasks);
@@ -105,14 +110,13 @@ class Review extends \Gini\Controller\CGI
             }
 
             foreach ($groups as $group) {
-                $search_params['candidateGroups'][] = $group->id;
+                $search_params['candidateGroup'][] = $group->id;
             }
             $search_params['includeAssignedTasks'] = true;
-            $sorting[] = [
-                'sortBy' => 'created',
-                'sortOrder' => 'desc'
+            $sortBy = [
+                'created' => 'desc'
             ];
-            $search_params['sorting'] = $sorting;
+            $search_params['sortBy'] = $sortBy;
             $o = $engine->searchTasks($search_params);
             $tasks = $engine->getTasks($o->token, $start, $limit);
             return $tasks;

@@ -71,17 +71,16 @@ class Tools extends \Gini\Controller\ClI
                 $group = $engine->group();
                 $bool = $group->create($params);
                 if ($bool) {
-                    $group = $engine->group($params['id']);
                     echo $his_group->name."--o \n";
                     $group_users = Those('sjtu/bpm/process/group/user')
                         ->Whose('group')->is($his_group);
                     foreach ($group_users as $group_user) {
                         $ret = $group->addMember($group_user->user->id);
                         if (!$ret) {
-                            echo $group->id."---".$group_user->user->id."--x \n";
+                            echo $his_group->name."---".$group_user->user->id."--x \n";
                             continue;
                         }
-                        echo $group->id."---".$group_user->user->id."--o \n";
+                        echo $his_group->name."---".$group_user->user->id."--o \n";
                     }
                 } else {
                     echo $his_group->name."--x \n";
@@ -162,7 +161,7 @@ class Tools extends \Gini\Controller\ClI
         $his_engine = \Gini\Process\Engine::of('default');
         $his_process = $his_engine->getProcess($his_process_name);
 
-        $processName = 'update-his-instance';
+        $processName = 'update-his-instances';
         $conf = \Gini\Config::get('app.order_review_process');
         $engine = \Gini\BPM\Engine::of('order_review');
         $process = $engine->process($processName);
@@ -224,3 +223,4 @@ class Tools extends \Gini\Controller\ClI
         }
     }
 }
+
