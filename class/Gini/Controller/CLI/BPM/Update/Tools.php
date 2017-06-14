@@ -10,8 +10,8 @@ class Tools extends \Gini\Controller\ClI
         echo "请务必先执行 gini bpm update tools users ！\n";
         echo "用户升级: gini bpm update tools users \n";
         echo "审批组升级: gini bpm update tools groups \n";
-        echo "待审批数据升级: gini bpm update tools update-instances";
-        echo "审批历史数据升级: gini bpm update tools update-finished-instances";
+        echo "待审批数据升级: gini bpm update tools update-instancesi \n";
+        echo "审批历史数据升级: gini bpm update tools update-finished-instances \n";
     }
 
     public function actionUsers()
