@@ -10,6 +10,7 @@ class Tools extends \Gini\Controller\ClI
         echo "请务必先执行 gini bpm update tools users ！\n";
         echo "用户升级: gini bpm update tools users \n";
         echo "审批组升级: gini bpm update tools groups \n";
+        echo "审批组成员升级: gini bpm update tools group-members \n";
         echo "待审批数据升级: gini bpm update tools update-instancesi \n";
         echo "审批历史数据升级: gini bpm update tools update-finished-instances \n";
     }
@@ -72,26 +73,61 @@ class Tools extends \Gini\Controller\ClI
                 $params['type'] = $conf['name'];
                 $group = $engine->group();
                 $bool = $group->create($params);
-                if ($bool) {
-                    echo $his_group->name."--o \n";
-                    $group_users = Those('sjtu/bpm/process/group/user')
-                        ->Whose('group')->is($his_group);
-                    foreach ($group_users as $group_user) {
-                        $ret = $group->addMember($group_user->user->id);
-                        if (!$ret) {
-                            echo $his_group->name."---".$group_user->user->id."--x \n";
-                            continue;
-                        }
-                        echo $his_group->name."---".$group_user->user->id."--o \n";
-                    }
-                } else {
-                    echo $his_group->name."--x \n";
-                }
             } catch (\Gini\BPM\Exception $e) {
+                echo $params['id'].'--x \n';
+            }
+            if ($bool) {
+                echo $his_group->name."---".$group_user->user->id."--o \n";
+            } else {
+                echo $his_group->name."--x \n";
             }
         }
 
         echo "DONE \n";
+    }
+
+    public function actionGroupMembers()
+    {
+        $his_process_name = 'order-review-process';
+        $his_engine = \Gini\Process\Engine::of('default');
+        $his_process = $his_engine->getProcess($his_process_name);
+
+        $conf = \Gini\Config::get('app.order_review_process');
+        $engine = \Gini\BPM\Engine::of('order_review');
+
+        try {
+            $params['type'] = $conf['name'];
+            $rData = $engine->searchGroups($params);
+            $candidateGroups = $engine->getGroups($rData->token, 0, $rData->total);
+        } catch (\Gini\BPM\Exception $e) {
+            echo "获取分组异常 \n";
+        }
+
+        if (!count($candidateGroups)) {
+            return ;
+        }
+        foreach ($candidateGroups as $candidateGroup) {
+            $hisGroupName = substr($candidateGroup->id, strlen($conf['name'].'-'));
+            $hisGroup = a('sjtu/bpm/process/group', ['name' => $hisGroupName]);
+            if (!$hisGroup->id) {
+                continue;
+            }
+            $hisGroupMembers = Those('sjtu/bpm/process/group/user')
+                ->Whose('group')->is($hisGroup);
+            foreach ($hisGroupMembers as $hisGroupMember) {
+                try {
+                    $bool = $candidateGroup->addMember($hisGroupMember->user->id);
+                } catch (\Gini\BPM\Exception $e) {
+                    echo $candidateGroup->id."--".$hisGroupMember->user->name."--x \n";
+                    continue;
+                }
+                if (!$bool) {
+                    echo $candidateGroup->id."--".$hisGroupMember->user->name."--x \n";
+                    continue;
+                }
+                echo $candidateGroup->id."--".$hisGroupMember->user->name."--o \n";
+            }
+        }
     }
 
     public function actionUpdateInstances()
