@@ -208,7 +208,7 @@ class Tools extends \Gini\Controller\ClI
                 try {
                     $create_instance = $process->start($cacheData);
                     if ($create_instance->id) {
-                        $search_params['instance'] =  $create_instance->id;
+                        $search_params['processInstance'] =  $create_instance->id;
                         $result = $engine->searchTasks($search_params);
                         $tasks = $engine->getTasks($result->token, 0, $result->total);
                         $task = current($tasks);
