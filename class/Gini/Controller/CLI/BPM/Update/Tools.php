@@ -10,6 +10,8 @@ class Tools extends \Gini\Controller\ClI
         echo "请务必先执行 gini bpm update tools users ！\n";
         echo "用户升级: gini bpm update tools users \n";
         echo "审批组升级: gini bpm update tools groups \n";
+        echo "待审批数据升级: gini bpm update tools update-instances";
+        echo "审批历史数据升级: gini bpm update tools update-finished-instances";
     }
 
     public function actionUsers()
@@ -161,7 +163,7 @@ class Tools extends \Gini\Controller\ClI
         $his_engine = \Gini\Process\Engine::of('default');
         $his_process = $his_engine->getProcess($his_process_name);
 
-        $processName = 'update-his-instances';
+        $processName = 'history-order-review-process';
         $conf = \Gini\Config::get('app.order_review_process');
         $engine = \Gini\BPM\Engine::of('order_review');
         $process = $engine->process($processName);
@@ -223,4 +225,3 @@ class Tools extends \Gini\Controller\ClI
         }
     }
 }
-
