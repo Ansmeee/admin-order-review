@@ -115,9 +115,7 @@ class Review extends \Gini\Controller\CGI
         $o = $engine->searchGroups($params);
         $groups = $engine->getGroups($o->token, 0, $o->total);
 
-        if (!count($groups)) {
-            return ;
-        }
+        if (!count($groups)) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
 
         foreach ($groups as $group) {
             $search_params['candidateGroup'][] = $group->id;
@@ -130,9 +128,7 @@ class Review extends \Gini\Controller\CGI
         $rdata = $engine->searchTasks($search_params);
         $tasks = $engine->getTasks($rdata->token, $start, $limit);
 
-        if (!count($tasks)) {
-            return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
-        }
+        if (!count($tasks)) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
 
         $orders = [];
         foreach ($tasks as $task) {
