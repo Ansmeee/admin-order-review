@@ -44,8 +44,13 @@ class Review extends \Gini\Controller\CGI
             if ($candidateGroup->type != $process->id) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
             if ($user->id && !$isMemberOfGroup) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
 
+            $sortBy = [
+                'startTime' => 'desc'
+            ];
+            $params['sortBy'] = $sortBy;
             $params['candidateGroup'][] = $candidateGroup->id;
             $params['history'] = true;
+
             $result = $engine->searchTasks($params);
             $tasks = $engine->getTasks($result->token, $start, $limit);
             if (!count($tasks)) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
@@ -54,9 +59,6 @@ class Review extends \Gini\Controller\CGI
                 $instanceIds[] = $task->processInstanceId;
             }
 
-            $sortBy = [
-                'startTime' => 'desc'
-            ];
             $searchInstanceParams['sortBy'] = $sortBy;
             $searchInstanceParams['history'] = true;
             $searchInstanceParams['processInstance'] = $instanceIds;
@@ -77,6 +79,7 @@ class Review extends \Gini\Controller\CGI
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-instances', [
             'instances'=> $objects,
             'type'=> $type,
+            'group'=> $candidateGroup->id,
             'page'=> $page,
             'total'=> ceil($result->total/$limit),
             'vTxtTitles' => \Gini\Config::get('haz.types')
@@ -101,42 +104,32 @@ class Review extends \Gini\Controller\CGI
         }
     }
 
-    private function _getCandidateTasks($start, $limit) {
-        try {
-            $me = _G('ME');
-            list($process, $engine) = $this->_getProcessEngine();
-            $params['member'] = $me->id;
-            $params['type'] = $process->id;
-            $o = $engine->searchGroups($params);
-            $groups = $engine->getGroups($o->token, 0, $o->total);
-
-            if (!count($groups)) {
-                return ;
-            }
-
-            foreach ($groups as $group) {
-                $search_params['candidateGroup'][] = $group->id;
-            }
-            $search_params['includeAssignedTasks'] = true;
-            $sortBy = [
-                'created' => 'desc'
-            ];
-            $search_params['sortBy'] = $sortBy;
-            $o = $engine->searchTasks($search_params);
-            $tasks = $engine->getTasks($o->token, $start, $limit);
-            return $tasks;
-        } catch (\Gini\BPM\Exception $e) {
-        }
-        return ;
-    }
-
     private function _showMoreTask($page, $querystring=null)
     {
         $me = _G('ME');
         $limit = 25;
         $start = ($page - 1) * $limit;
         list($process, $engine) = $this->_getProcessEngine();
-        $tasks = $this->_getCandidateTasks($start, $limit);
+        $params['member'] = $me->id;
+        $params['type'] = $process->id;
+        $o = $engine->searchGroups($params);
+        $groups = $engine->getGroups($o->token, 0, $o->total);
+
+        if (!count($groups)) {
+            return ;
+        }
+
+        foreach ($groups as $group) {
+            $search_params['candidateGroup'][] = $group->id;
+        }
+        $search_params['includeAssignedTasks'] = true;
+        $sortBy = [
+            'created' => 'desc'
+        ];
+        $search_params['sortBy'] = $sortBy;
+        $rdata = $engine->searchTasks($search_params);
+        $tasks = $engine->getTasks($rdata->token, $start, $limit);
+
         if (!count($tasks)) {
             return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
         }
@@ -157,7 +150,7 @@ class Review extends \Gini\Controller\CGI
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-tasks', [
             'orders'=> $orders,
             'page'=> $page,
-            'total'=> ceil(($o->total)/$limit),
+            'total'=> ceil(($rdata->total)/$limit),
             'vTxtTitles' => \Gini\Config::get('haz.types')
         ]));
     }
@@ -490,4 +483,3 @@ class Review extends \Gini\Controller\CGI
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/preview', ['comments' => $comments]));
     }
 }
-

@@ -41,12 +41,13 @@ define('page/review', ['jquery', 'utils/bootbox', 'board', 'utils/preview'], fun
     $(document).on('click', '.app-pager-li-handler', function() {
         var page = $(this).attr('data-page');
         var type = $(this).attr('data-type');
+        var group = $(this).attr('data-group');
         var $searchHandler = $('.app-q-search-handler');
         var q = '';
         if ($searchHandler.length) {
             q = $searchHandler.parents('form').find('[name=q]').val();
         }
-        var url = ['ajax/review/more', page, type].join('/');
+        var url = ['ajax/review/more', page, type, group].join('/');
         search({
             url: url
             ,q: q
