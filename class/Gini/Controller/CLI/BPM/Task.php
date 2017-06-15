@@ -7,9 +7,17 @@ class Task extends \Gini\Controller\CLI
     public function actionRun($argv)
     {
         if (count($argv) == 0) return;
-        $id = (int)$argv[0];
-        $task = a('sjtu/bpm/process/task', $id);
-        if (!$task->id) return;
+        $candidateGroup = $argv[0];
+        $orderData = unserialize($argv[0]);
+        $confBpm = \Gini\Config::get('app.order_review_process');
+        $engine = \Gini\BPM\Engine::of('order_review');
+        try {
+            $group = $engine->group($candidateGroup);
+            if (!$group->id) return ;
+        } catch (\Gini\BPM\Exception $e) {
+            return ;
+        }
+
         $conf = \Gini\Config::get('wechat.gateway');
         $templates = \Gini\Config::get('wechat.templates');
         $template = $templates['order-need-review'];
@@ -18,10 +26,11 @@ class Task extends \Gini\Controller\CLI
         $templateID = $template['id'];
         $content = $template['content'];
         if (!$token) return;
-        $group = $task->candidate_group;
-        $instance = $task->instance;
-        $data = (array)$instance->data;
-        $data = $data['data'];
+        $rdata = explode(',', rtrim(ltrim($orderData,'{'), '}'));
+        foreach($rdata as $d) {
+            $d = explode(':', $d);
+            $data[$d[0]] = $d[1];
+        }
         $raw_data = [
             'title'=> [
                 'color'=>'#173177',
@@ -33,7 +42,7 @@ class Task extends \Gini\Controller\CLI
             ],
             'customer' => [
                 'color' => '#173177',
-                'value' => $data['customer']['name'],
+                'value' => $data['customer_name'],
             ],
             'type' => [
                 'color' => '#173177',
@@ -56,10 +65,21 @@ class Task extends \Gini\Controller\CLI
         foreach ($content as $k => $v) {
             $data[$v] = $raw_data[$k];
         }
-        $gus = those('sjtu/bpm/process/group/user')->whose('group')->is($group);
+
+        try {
+            $gus = $group->getMembers();
+            if (!count($gus)) return ;
+        } catch (\Gini\BPM\Exception $e) {
+            return ;
+        }
+
+        $tagRpc = \Gini\Module\AppBase::getTagDBRPC();
         foreach ($gus as $user) {
-            $wechat_data =  (array)$user->wechat_data;
-            if ($openID = $wechat_data['openid']) {
+            $uid = (int)$user->id;
+            $tag = "labmai-user/{$uid}";
+            $tagData = $tagRpc->tagdb->data->get($tag);
+            if ($tagData['openid'] && $tagData['unionid']) {
+                $openID = $tagData['openid'];
                 $rpc->wechat->sendTemplateMessage($openID, $templateID, $data);
             }
         }

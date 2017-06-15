@@ -52,6 +52,23 @@ class Order extends \Gini\Controller\CGI\Layout
         }
     }
 
+    public function actionSendMsg()
+    {
+        $content = file_get_contents('php://input');
+        $rdata = explode('&', $content);
+        $candidateGroup = $rdata[0];
+        $orderData = json_decode($rdata[1]);
+        $data['vendor_name'] = $orderData->vendor_name;
+        $data['customer_name']	= $orderData->customer->name;
+        $data['customized'] = $orderData->customized;
+        $data['price'] = $orderData->price;
+        $data['note'] = $orderData->note;
+
+        $data = json_encode($data, JSON_UNESCAPED_UNICODE);
+        $giniFullName = $_SERVER['GINI_SYS_PATH'].'/bin/gini';
+        exec("{$giniFullName} bpm task run ".$candidateGroup." ".$data. " > /dev/null 2>&1 &");
+    }
+
     // 订单的更新直接向lab-orders进行提交, 因为hub-orders没有自购订单的信息
     private static $_RPCs = [];
     private static function _getRPC($type)
