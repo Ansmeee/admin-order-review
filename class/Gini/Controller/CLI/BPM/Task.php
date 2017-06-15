@@ -8,7 +8,7 @@ class Task extends \Gini\Controller\CLI
     {
         if (count($argv) == 0) return;
         $candidateGroup = $argv[0];
-        $orderData = unserialize($argv[0]);
+        $orderData = $argv[1];
         $confBpm = \Gini\Config::get('app.order_review_process');
         $engine = \Gini\BPM\Engine::of('order_review');
         try {
