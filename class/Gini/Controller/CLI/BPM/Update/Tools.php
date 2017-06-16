@@ -11,7 +11,7 @@ class Tools extends \Gini\Controller\ClI
         echo "用户升级: gini bpm update tools users \n";
         echo "审批组升级: gini bpm update tools groups \n";
         echo "审批组成员升级: gini bpm update tools group-members \n";
-        echo "待审批数据升级: gini bpm update tools update-instancesi \n";
+        echo "待审批数据升级: gini bpm update tools update-instances \n";
         echo "审批历史数据升级: gini bpm update tools update-finished-instances \n";
     }
 
