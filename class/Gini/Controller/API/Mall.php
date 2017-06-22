@@ -5,7 +5,7 @@ namespace Gini\Controller\API;
 class Mall extends \Gini\Controller\API\Base
 {
     /**
-        * @brief 重写构造函数，避免authorize断言判断
+        * @brief 閲嶅啓鏋勯�犲嚱鏁帮紝閬垮厤authorize鏂█鍒ゆ柇
         *
         * @return
      */
@@ -27,13 +27,12 @@ class Mall extends \Gini\Controller\API\Base
             }
         }
         catch (\Exception $e) {
-            throw new \Gini\API\Exception('网络故障', 503);
+            throw new \Gini\API\Exception('缃戠粶鏁呴殰', 503);
         }
         if ($token) {
             $this->setCurrentApp($clientID);
             return session_id();
         }
-        throw new \Gini\API\Exception('非法的APP', 404);
+        throw new \Gini\API\Exception('闈炴硶鐨凙PP', 404);
     }
 }
-

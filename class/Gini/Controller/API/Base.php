@@ -2,7 +2,7 @@
 
 /**
 * @file Base.php
-* @brief ÎªËùÓĞAPPÌá¹©Í¨ÓÃµÄ·½·¨
+* @brief ä¸ºæ‰€æœ‰APPæä¾›é€šç”¨çš„æ–¹æ³•
 * @author wenjun.zheng
 * @version 0.1.0
 * @date 2017-06-20
@@ -20,7 +20,7 @@ abstract class Base extends \Gini\Controller\API
     }
 
     /**
-        * @brief ·ÇÕı³£ÍË³ö
+        * @brief éæ­£å¸¸é€€å‡º
         *
         * @param $message
         * @param $code
@@ -33,7 +33,7 @@ abstract class Base extends \Gini\Controller\API
     }
 
     /**
-        * @brief ÉèÖÃµ±Ç°ÇëÇóµÄAPPĞÅÏ¢
+        * @brief è®¾ç½®å½“å‰è¯·æ±‚çš„APPä¿¡æ¯
         *
         * @param $id
         *
@@ -45,7 +45,7 @@ abstract class Base extends \Gini\Controller\API
     }
 
     /**
-        * @brief »ñÈ¡µ±Ç°ÇëÇóµÄAPPĞÅÏ¢
+        * @brief è·å–å½“å‰è¯·æ±‚çš„APPä¿¡æ¯
         *
         * @return
      */
@@ -56,7 +56,7 @@ abstract class Base extends \Gini\Controller\API
     }
 
     /**
-        * @brief ¶ÏÑÔappÒÑ¾­Í¨¹ıÑéÖ¤
+        * @brief æ–­è¨€appå·²ç»é€šè¿‡éªŒè¯
         *
         * @return
      */
@@ -64,8 +64,7 @@ abstract class Base extends \Gini\Controller\API
     {
         $clientID = $this->getCurrentApp();
         if (!$clientID) {
-            throw new \Gini\API\Exception('APPÃ»ÓĞÍ¨¹ıÑéÖ¤', 404);
+            throw new \Gini\API\Exception('APPæ²¡æœ‰é€šè¿‡éªŒè¯', 404);
         }
     }
 }
-

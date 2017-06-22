@@ -7,11 +7,11 @@
             <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
                 <?php
                 $me = _G('ME');
-                if ($me->isAllowedTo('¹ÜÀíÈ¨ÏÞ')) {
+                if ($me->isAllowedTo('ç®¡ç†æƒé™')) {
                 ?>
-                <li class="show-settings text-center" style="cursor:pointer;"><a href="manager"><?= H(T('ÉèÖÃ·Ö×é')) ?></a></li>
+                <li class="show-settings text-center" style="cursor:pointer;"><a href="manager"><?= H(T('è®¾ç½®åˆ†ç»„')) ?></a></li>
                 <?php }?>
-                <li class="show-settings text-center" style="cursor:pointer;"><a href="wechat-bind"><?= H(T('Î¢ÐÅ°ó¶¨')) ?></a></li>
+                <li class="show-settings text-center" style="cursor:pointer;"><a href="wechat-bind"><?= H(T('å¾®ä¿¡ç»‘å®š')) ?></a></li>
             </ul>
         </div>
     </div>
@@ -30,20 +30,20 @@
         </div>
     <?php } ?>
     <ul class="board-header-ul list-unstyled">
-        <li <?=$type == 'pending' ? 'class="active"' : '' ?>><a href="pending"><?= H(T('´ýÉó²É¹º')) ?></a></li>
-        <li <?=$type == 'history' ? 'class="active"' : '' ?>><a href="history"><?= H(T('ÉóºËÀúÊ·')) ?></a></li>
+        <li <?=$type == 'pending' ? 'class="active"' : '' ?>><a href="pending"><?= H(T('å¾…å®¡é‡‡è´­')) ?></a></li>
+        <li <?=$type == 'history' ? 'class="active"' : '' ?>><a href="history"><?= H(T('å®¡æ ¸åŽ†å²')) ?></a></li>
     </ul>
 </div>
 <div class="board-content">
     <div class="board-content-header" style="padding:0 20px;">
         <ul class="list-unstyled ul-list clearfix<?=$vAllowOperate ? '' : ' ul-list-noop'?>">
-            <li class="ul-list-li-ctime"><?=H(T('Ê±¼ä'))?></li>
-            <li class="ul-list-li-voucher"><?=H(T('¶©µ¥±àºÅ'))?></li>
-            <li class="ul-list-li-customer"><?=H(T('Âò·½'))?></li>
-            <li class="ul-list-li-vendor"><?=H(T('¹©Ó¦ÉÌ'))?></li>
-            <li class="ul-list-li-product"><?=H(T('ÉÌÆ·'))?></li>
-            <li class="ul-list-li-price"><?=H(T('½ð¶î'))?></li>
-            <li class="ul-list-li-status"><?=H(T('×´Ì¬'))?></li>
+            <li class="ul-list-li-ctime"><?=H(T('æ—¶é—´'))?></li>
+            <li class="ul-list-li-voucher"><?=H(T('è®¢å•ç¼–å·'))?></li>
+            <li class="ul-list-li-customer"><?=H(T('ä¹°æ–¹'))?></li>
+            <li class="ul-list-li-vendor"><?=H(T('ä¾›åº”å•†'))?></li>
+            <li class="ul-list-li-product"><?=H(T('å•†å“'))?></li>
+            <li class="ul-list-li-price"><?=H(T('é‡‘é¢'))?></li>
+            <li class="ul-list-li-status"><?=H(T('çŠ¶æ€'))?></li>
             <li class="ul-list-li-op"> &#160; </li>
         </ul>
     </div>
@@ -65,7 +65,7 @@
                 <div class="text-ellipsis" title="<?=H($vPData['name'])?> * <?=H($vPData['quantity'])?>">
                     <?php $vCasNO = $vPData['cas_no'];?>
                     <?php if ($vPData['customized']) {?>
-                    <i data-require="utils/toggle-tooltip" class="fa fa-info-circle" data-toggle="tooltip" data-placement="top" title="<?=H(T('×Ô¹ºÀíÓÉ: %reason', ['%reason'=> $vPData['reason']]))?>"></i>
+                    <i data-require="utils/toggle-tooltip" class="fa fa-info-circle" data-toggle="tooltip" data-placement="top" title="<?=H(T('è‡ªè´­ç†ç”±: %reason', ['%reason'=> $vPData['reason']]))?>"></i>
                     <?php }?>
                     <?=H($vPData['name'])?> * <?=H($vPData['quantity'])?>
                     <?php if ($vCasNO && $vTypes=\Gini\ChemDB\Client::getTypes($vCasNO)) {?>
@@ -80,10 +80,9 @@
                 <span class="btn btn-info btn-xs status" data-placement="left" data-preview="instance" data-href="ajax/review/preview/<?=H($order->instance->id)?>"><?=H($order->task_status)?></span>
             </li>
             <li class="ul-list-li-op text-center">
-                <span class="app-op-per-handler btn btn-link" data-id="<?=H($task->id)?>" data-key="approve"><?=H(T('Í¨¹ý'))?></span>
-                <span class="app-op-per-handler btn btn-link" data-id="<?=H($task->id)?>" data-key="reject"><?=H(T('¾Ü¾ø'))?></span>
+                <span class="app-op-per-handler btn btn-link" data-id="<?=H($task->id)?>" data-key="approve"><?=H(T('é€šè¿‡'))?></span>
+                <span class="app-op-per-handler btn btn-link" data-id="<?=H($task->id)?>" data-key="reject"><?=H(T('æ‹’ç»'))?></span>
             </li>
         </ul>
     </div>
 </div>
-
