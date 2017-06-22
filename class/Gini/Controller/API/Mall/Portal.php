@@ -49,7 +49,6 @@ class Portal extends \Gini\Controller\API
             }
         }
 
-        //获取当前url
         $base_url = \Gini\URI::base();
         return (string) V('portal/order-review',[
             'url' => $base_url.'option',
@@ -93,4 +92,3 @@ class Portal extends \Gini\Controller\API
         return [$process, $engine];
     }
 }
-
