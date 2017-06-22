@@ -4,7 +4,7 @@ namespace Gini\Controller\API\Mall;
 
 class Portal extends \Gini\Controller\API
 {
-    public function actionGetView($user)
+    public function actionGetView($user, $mode)
     {
         $user = $this->_getUserInfo($user);
         $id = $user['id'];
