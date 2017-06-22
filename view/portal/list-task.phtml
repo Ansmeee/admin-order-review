@@ -1,0 +1,89 @@
+<div class="board-header" data-require="page/review" id="admin-order-review">
+    <div class="pull-right" style="margin-top:13px;">
+        <div class="dropdown" style="margin-left:40px;margin-right:20px;">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <i class="fa fa-cog" style="margin-right:10px;"></i><span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
+                <?php
+                $me = _G('ME');
+                if ($me->isAllowedTo('管理权限')) {
+                ?>
+                <li class="show-settings text-center" style="cursor:pointer;"><a href="manager"><?= H(T('设置分组')) ?></a></li>
+                <?php }?>
+                <li class="show-settings text-center" style="cursor:pointer;"><a href="wechat-bind"><?= H(T('微信绑定')) ?></a></li>
+            </ul>
+        </div>
+    </div>
+    <?php if ($type == 'history' && count($groups)) { ?>
+        <div class="pull-right" style="margin-top:13px;">
+            <div class="dropdown" style="margin-left:40px;margin-right:20px;">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                    <?= H($current_group->name)?>&nbsp;&nbsp;<span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
+                    <?php foreach ($groups as $group) { ?>
+                        <li class="show-settings text-center" style="cursor:pointer;"><a href="history/<?= H($group->id)?>"><?= H($group->name) ?></a></li>
+                    <?php }?>
+                </ul>
+            </div>
+        </div>
+    <?php } ?>
+    <ul class="board-header-ul list-unstyled">
+        <li <?=$type == 'pending' ? 'class="active"' : '' ?>><a href="pending"><?= H(T('待审采购')) ?></a></li>
+        <li <?=$type == 'history' ? 'class="active"' : '' ?>><a href="history"><?= H(T('审核历史')) ?></a></li>
+    </ul>
+</div>
+<div class="board-content">
+    <div class="board-content-header" style="padding:0 20px;">
+        <ul class="list-unstyled ul-list clearfix<?=$vAllowOperate ? '' : ' ul-list-noop'?>">
+            <li class="ul-list-li-ctime"><?=H(T('时间'))?></li>
+            <li class="ul-list-li-voucher"><?=H(T('订单编号'))?></li>
+            <li class="ul-list-li-customer"><?=H(T('买方'))?></li>
+            <li class="ul-list-li-vendor"><?=H(T('供应商'))?></li>
+            <li class="ul-list-li-product"><?=H(T('商品'))?></li>
+            <li class="ul-list-li-price"><?=H(T('金额'))?></li>
+            <li class="ul-list-li-status"><?=H(T('状态'))?></li>
+            <li class="ul-list-li-op"> &#160; </li>
+        </ul>
+    </div>
+    <div class="board-content-body">
+        <ul class="list-unstyled ul-list clearfix row<?=$vAllowOperate ? '' : ' ul-list-noop'?>">
+            <li class="ul-list-li-ctime"><?=H(date('Y-m-d H:i', strtotime($order->ctime?:$order->request_date)))?></li>
+            <li class="ul-list-li-voucher"><a class="app-link-dialog-handler" href="ajax/review/task/<?=$task->id?>"><?=H($order->voucher)?></a></li>
+            <li class="ul-list-li-customer" title="<?=H($order->customer->name)?>"><?=H($order->customer->name)?></li>
+            <li class="ul-list-li-vendor" title="<?=H($order->vendor_name?:$order->vendor->name)?>"><?=H($order->vendor_name?:$order->vendor->name)?></li>
+            <li class="ul-list-li-product">
+            <?php
+            $vItems = (array)$order->items;
+            $tmpI = 1;
+            foreach ($vItems as $vPData) { ?>
+                <?php $vPData = (array)$vPData ?>
+                <?php if ($tmpI++>3) { ?>
+                <div>...</div>
+                <?php break;} else { ?>
+                <div class="text-ellipsis" title="<?=H($vPData['name'])?> * <?=H($vPData['quantity'])?>">
+                    <?php $vCasNO = $vPData['cas_no'];?>
+                    <?php if ($vPData['customized']) {?>
+                    <i data-require="utils/toggle-tooltip" class="fa fa-info-circle" data-toggle="tooltip" data-placement="top" title="<?=H(T('自购理由: %reason', ['%reason'=> $vPData['reason']]))?>"></i>
+                    <?php }?>
+                    <?=H($vPData['name'])?> * <?=H($vPData['quantity'])?>
+                    <?php if ($vCasNO && $vTypes=\Gini\ChemDB\Client::getTypes($vCasNO)) {?>
+                        <?=\Gini\ORM\Product::showTagsHTML($vTypes[$vCasNO], 'full')?>
+                    <?php }?>
+                </div>
+                <?php }?>
+            <?php }?>
+            </li>
+            <li class="ul-list-li-price"><?=H(money_format('%.2n', $order->price))?></li>
+            <li class="ul-list-li-status">
+                <span class="btn btn-info btn-xs status" data-placement="left" data-preview="instance" data-href="ajax/review/preview/<?=H($order->instance->id)?>"><?=H($order->task_status)?></span>
+            </li>
+            <li class="ul-list-li-op text-center">
+                <span class="app-op-per-handler btn btn-link" data-id="<?=H($task->id)?>" data-key="approve"><?=H(T('通过'))?></span>
+                <span class="app-op-per-handler btn btn-link" data-id="<?=H($task->id)?>" data-key="reject"><?=H(T('拒绝'))?></span>
+            </li>
+        </ul>
+    </div>
+</div>
+

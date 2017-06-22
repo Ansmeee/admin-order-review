@@ -96,5 +96,57 @@ class Index extends Layout\Board{
         echo $qrCode->getBarcodePNG(4, 4);
         exit;
     }
+
+    public function actionOption($uId, $taskId)
+    {
+        $me = _G('ME');
+        $gorup = _G('GROUP');
+        $user = a('user', (int)$uId);
+        if (!$gorup->id || !$user->id || !$me->id || $me->id != $user->id) {
+            $this->redirect('error/401');
+        }
+
+        try {
+            $conf = \Gini\Config::get('app.order_review_process');
+            $engine = \Gini\BPM\Engine::of('order_review');
+            $process = $engine->process($conf['name']);
+
+            $task = $engine->task($taskId);
+            if (!$task->processInstanceId) {
+                $this->redirect('pending');
+            }
+            $instance = $engine->processInstance($task->processInstanceId);
+            $params['variableName'] = 'data';
+            $rdata = $instance->getVariables($params);
+            $object = json_decode(current($rdata)['value']);
+            $object->instance = $instance;
+            $object->task_status = $this->_getInstanceStatus($engine, $instance);
+        } catch (\Gini\BPM\Exception $e) {
+        }
+
+        $this->view->body = V('portal/list-task',[
+            'task' => $task,
+            'order' => $object,
+            'vTxtTitles' => \Gini\Config::get('haz.types')
+        ]);
+    }
+
+    private function _getInstanceStatus($engine, $instance)
+    {
+        try {
+            if ($instance->state === 'COMPLETED') {
+                return T('已结束');
+            }
+
+            $params['processInstance'] = $instance->id;
+            $o = $engine->searchTasks($params);
+            $tasks = $engine->getTasks($o->token, 0, $o->total);
+            $task = current($tasks);
+            $group = $engine->group($task->assignee);
+
+            return T('等待 :group 审批', [':group' => $group->name]);
+        } catch (\Gini\BPM\Exception $e) {
+        }
+    }
 }
 
