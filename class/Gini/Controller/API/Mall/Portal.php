@@ -6,8 +6,8 @@ class Portal extends \Gini\Controller\API
 {
     public function actionGetView($user, $mode)
     {
-        $user = $this->_getUserInfo($user);
-        $id = $user['id'];
+        $userInfo = $this->_getUserInfo($user);
+        $id = $userInfo['id'];
         list($process, $engine) = $this->_getProcessEngine();
 
         if (!$id || !$process->id) {
@@ -58,6 +58,41 @@ class Portal extends \Gini\Controller\API
         ]);
     }
 
+
+    public function actionHasPerm($user, $mode)
+    {
+        $userInfo = $this->_getUserInfo($user);
+        $id = $userInfo['id'];
+        if (!$id) return false;
+
+        switch ($mode) {
+            case 'admin_order_review':
+                $result = $this->_hasOrderReviewPerm($id, $mode);
+                break;
+        }
+
+        return $result;
+    }
+
+    private function _hasOrderReviewPerm($uid, $mode)
+    {
+        $user = a('user', (int)$uid);
+        if (!$user->id) return fasle;
+        $perms = [];
+        list($process, $engine) = $this->_getProcessEngine();
+        try {
+            $params['member'] = $user->id;
+            $params['type'] = $process->id;
+            $o = $engine->searchGroups($params);
+            $groups = $engine->getGroups($o->token, 0, $o->total);
+            if (!count($groups)) return $perms;
+            $perms[] = $mode;
+            return $perms;
+        } catch (\Gini\BPM\Exception $e) {
+            return $perms ;
+        }
+    }
+
     private function _getOrderObject($instance)
     {
         $params['variableName'] = 'data';
@@ -78,7 +113,8 @@ class Portal extends \Gini\Controller\API
         } catch (\Exception $e) {
             return false;
         }
-        return $info;
+
+        return (array)$info;
     }
 
     private function _getProcessEngine()
