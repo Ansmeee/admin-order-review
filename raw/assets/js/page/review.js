@@ -26,6 +26,7 @@ define('page/review', ['jquery', 'utils/bootbox', 'board', 'utils/preview'], fun
             var $oph = $(['[data-id=', id, ']'].join(''));
             $oph.hide();
             $modal.modal('hide');
+            location.reload();
         });
     });
     $(document).on('click', '.app-q-search-handler', function() {
