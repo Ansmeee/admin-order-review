@@ -478,4 +478,80 @@ class Review extends \Gini\Controller\CGI
         }
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/preview', ['comments' => $comments]));
     }
+
+    public function actionGetBatchOPForm()
+    {
+        $form = $this->form();
+        $key = $form['key'];
+        $ids= $form['ids'];
+        if (!strlen($ids)) return;
+
+        return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/op-form', [
+            'ids'=> $ids,
+            'key'=> $key,
+            'batch'=> true,
+            'title'=> $key=='approve' ? T('通过') : T('拒绝')
+        ]));
+    }
+
+    public function actionPostBatch()
+    {
+        $me = _G('ME');
+        $group =_G('GROUP');
+        if (!$group->id || !$me->id) return ;
+
+
+        $form = $this->form();
+        $key = $form['key'];
+        $ids = explode(',', $form['ids']);
+        $note = $form['note'];
+
+        list($process, $engine) = $this->_getProcessEngine();
+        if (!$process->id) return;
+
+        foreach ($ids as $id) {
+            try {
+                $task = $engine->task($id);
+                $rdata = $task->getVariables('data');
+                $data = (array)json_decode($rdata['value']);
+                $candidate_group = $engine->group($task->assignee);
+            } catch (\Gini\BPM\Exception $e) {
+                continue;
+            }
+
+            if ($key=='approve') {
+                $db = \Gini\Database::db('mall-old');
+                $db->beginTransaction();
+                try {
+                    $params = [
+                        ':voucher' => $data['voucher'],
+                        ':date' => date('Y-m-d H:i:s'),
+                        ':operator' => $me->id,
+                        ':type' => \Gini\ORM\Order::OPERATE_TYPE_APPROVE,
+                        ':name' => $me->name,
+                        ':description' => $candidate_group->name.T('审批人'),
+                    ];
+
+                    $sql = "insert into order_operate_info (voucher,operate_date,operator_id,type,name,description) values (:voucher, :date, :operator, :type, :name, :description)";
+                    $query = $db->query($sql, null, $params);
+
+                    if (!$query) throw new \Exception();
+                    $bool = $this->_approve($engine, $task, $note);
+                    if (!$bool) throw new \Exception();
+                    $db->commit();
+                } catch (\Exception $e) {
+                    $bool = false;
+                    $db->rollback();
+                }
+            } else {
+                $bool = $this->_reject($engine, $task, $note);
+            }
+        }
+
+        return \Gini\IoC::construct('\Gini\CGI\Response\JSON', [
+            'code' => $bool ? 0 : 1,
+            'ids'=> $ids,
+            'message' => $message ?: ($bool ? T('操作成功') : T('操作失败, 请您重试')),
+        ]);
+    }
 }

@@ -70,4 +70,52 @@ define('page/review', ['jquery', 'utils/bootbox', 'board', 'utils/preview'], fun
         });
         return false;
     });
+
+    $(document).on('change', '#checkall', function() {
+        var checkboxes = $("input[name='check']");
+        if($(this).prop('checked')) {
+            checkboxes.prop('checked', true);
+        } else {
+            checkboxes.prop('checked', false);
+        }
+    });
+
+    $(document).on('click', '.app-op-batch-handler', function() {
+        var ids = new Array();
+        var checkedboxs = $("input[name='check']:checked");
+        var key = $(this).data('key');
+        checkedboxs.each(function() {
+            var id = $(this).attr('value');
+            ids.push(id);
+        });
+
+        $.get('ajax/review/get-batch-op-form', {ids:ids.toString(), key:key}, function(data){
+            if(data) {
+                $(data).modal('show');
+            }
+        });
+    });
+
+    $(document).on('click', '.app-op-batch-submit-handler', function() {
+        var $modal = $(this).parents('.modal');
+        var $form = $modal.find('form');
+        var action = $form.attr('action');
+        $.post(action, $form.serialize(), function(response) {
+            response = response || {};
+            var code = response.code;
+            var message = response.message;
+            var ids = response.ids;
+            if (code) {
+                Bootbox.alert(response.message);
+                return;
+            }
+
+            for (var i = 0; i < ids.length; i++) {
+                var id = ids[i];
+                $(['[data-id=', id, ']'].join('')).hide();
+            }
+            $modal.modal('hide');
+            location.reload();
+        });
+    });
 });
