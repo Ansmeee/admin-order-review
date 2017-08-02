@@ -484,7 +484,13 @@ class Review extends \Gini\Controller\CGI
         $form = $this->form();
         $key = $form['key'];
         $ids= $form['ids'];
-        if (!strlen($ids)) return;
+        if (!strlen($ids)) {
+            $response = [
+                'code' => true,
+                'message' =>  T('请选择要审批的订单')
+            ];
+            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+        }
 
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/op-form', [
             'ids'=> $ids,
@@ -503,6 +509,13 @@ class Review extends \Gini\Controller\CGI
 
         $form = $this->form();
         $key = $form['key'];
+        if (!strlen($form['ids'])) {
+            $response = [
+                'code' => true,
+                'message' =>  T('请选择要审批的订单')
+            ];
+            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+        }
         $ids = explode(',', $form['ids']);
         $note = $form['note'];
 

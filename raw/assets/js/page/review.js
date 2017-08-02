@@ -91,6 +91,11 @@ define('page/review', ['jquery', 'utils/bootbox', 'board', 'utils/preview'], fun
         });
 
         $.get('ajax/review/get-batch-op-form', {ids:ids.toString(), key:key}, function(data){
+            var code = data.code;
+            if (code) {
+                Bootbox.alert(data.message);
+                return;
+            }
             if(data) {
                 $(data).modal('show');
             }
