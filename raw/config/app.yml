@@ -12,4 +12,6 @@ rpc:
     url: ${UNITCONV_API}
   chemdb:
     url: ${CHEMDB_API}
+#南信工要求增加试剂用途审核可见信息
+is_show_order_reagent_purpose: ${ADMIN_ORDER_REVIEW_IS_SHOW_REAGENT_PURPOSE}
 ...
