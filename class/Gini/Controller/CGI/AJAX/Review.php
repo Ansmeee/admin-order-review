@@ -166,7 +166,7 @@ class Review extends \Gini\Controller\CGI
         }
 
         if (\Gini\Config::get('app.is_show_order_reagent_purpose') === true) {
-            $order->purpose = $data['purpose'];
+            $order->purpose = $data->purpose;
         }
 
         return $order;
