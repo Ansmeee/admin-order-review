@@ -135,6 +135,16 @@
                         ]))?>
                     </div>
                 </div>
+                <?php if (\Gini\Config::get('app.is_show_order_reagent_purpose') === true && $order->purpose) { ?>
+                <div class="board-info-block">
+                    <div class="board-info-block-title"><?=H(T('试剂用途'))?></div>
+                        <dl style="overflow:hidden;text-overflow:ellipsis">
+                            <dt><?=H(T('试剂用途'))?></dt>
+                            <dd><?=H($order->purpose)?></dd>
+                        </dl>
+                    </dl>
+                </div>
+                <?php  } ?>
 
                 <div class="text-center">
                     <?php if (count($operators)) foreach ($operators as $vKey=>$vOp) {?>
