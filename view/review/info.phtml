@@ -59,7 +59,7 @@
                 <?php
                     $items = $order->items;
                     $item = (array)current($items);
-                    if ($item['customized']) {
+                    if ($item->customized) {
                 ?>
                 <div class="board-info-block">
                     <div class="board-info-block-title"><?=H(T('资质信息'))?></div>
