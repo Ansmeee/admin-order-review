@@ -59,11 +59,11 @@ class Debade extends \Gini\Controller\API
         }
         $cacheData['data'] = $message['data'];
         $cacheData['key'] = $processName;
-        
+
         $instanceID = $this->_getOrderInstanceID($processName, $data['voucher']);
         if ($instanceID) {
             $instance = $engine->processInstance($instanceID);
-            if (!$instance->id) {
+            if (!$instance->id || ($instance->state == 'COMPLETED')) {
                 $instance = $process->start($cacheData);
             }
         } else {
@@ -95,4 +95,3 @@ class Debade extends \Gini\Controller\API
         \Gini\TagDB\Client::of('default')->set($key, $info);
     }
 }
-
