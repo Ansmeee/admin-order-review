@@ -26,6 +26,11 @@ class Debade extends \Gini\Controller\API
         $data = $message['data'];
         if ($data['status']!=\Gini\ORM\Order::STATUS_NEED_MANAGER_APPROVE) return;
 
+        $bool = $this->_checkOrderCanApprove($data);
+        if (!$bool) {
+            return ;
+        }
+
         $node = \Gini\Config::get('app.node');
         $conf = \Gini\Config::get('app.order_review_process');
         $processName = $conf['name'];
@@ -73,6 +78,27 @@ class Debade extends \Gini\Controller\API
         if ($instance->id && $instance->id!=$instanceID) {
             $this->_setOrderInstanceID($processName, $data['voucher'], $instance->id);
         }
+    }
+
+    // 订单是否可以进入审批流程
+    private function _checkOrderCanApprove($data)
+    {
+        // 定制需求 如果订单 申购人 确认人 收货人不一致需要打回
+        if (\Gini\Config::Get('mall.need_different_requester_and_receiver') === true) {
+            if (!$data['requester_id'] || !$data['approver_id'] || !$data['default_receiver_id']) {
+                return false;
+            }
+
+            $arr[] = $data['requester_id'];
+            $arr[] = $data['approver_id'];
+            $arr[] = $data['default_receiver_id'];
+
+            if (count($arr) != count(array_unique($arr))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function _getOrderInstanceID($processName, $voucher)
