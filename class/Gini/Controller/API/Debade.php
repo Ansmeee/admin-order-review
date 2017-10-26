@@ -85,6 +85,10 @@ class Debade extends \Gini\Controller\API
     {
         // 定制需求 如果订单 申购人 确认人 收货人不一致需要打回
         if (\Gini\Config::Get('mall.need_different_requester_and_receiver') === true) {
+            if ($data['customized']) {
+                return true;
+            }
+
             if (!$data['requester_id'] || !$data['approver_id'] || !$data['default_receiver_id']) {
                 return false;
             }
