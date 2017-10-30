@@ -40,10 +40,43 @@ class BPM extends \Gini\Controller\CGI
 
         $user = a('user', $post['id']);
         if (!$user->id) return false;
-        try {
-            $engine = \Gini\BPM\Engine::of('order_review');
-            $group  = $engine->group($pname);
 
+        $engine = \Gini\BPM\Engine::of('order_review');
+
+        $need_create = false;
+        try {
+            // 判断用户是否已经在camunda 上注册了，如果没有，就给他注册上
+            $camunda_user = $engine->user($user->id);
+            if (!$camunda_user->id) {
+                $need_create = true;
+            }
+        } catch (\Gini\BPM\Exception $e) {
+            $need_create = true;
+        }
+
+        if ($need_create) {
+            try {
+                $camunda_user = $engine->user();
+                //密码暂时这样设置,得再想想
+                $params['id'] = $user->id;
+                $params['firstName'] = $user->name;
+                $params['lastName'] = $user->name;
+                $params['email'] = $user->email;
+                $arr = explode('@', $user->email, 2);
+                $password = $arr[0].'_'.$user->id;
+                $params['password'] = $password;
+
+                $bool = $camunda_user->create($params);
+                if (!$bool) {
+                    throw new \Gini\BPM\Exception();
+                }
+            } catch (\Gini\BPM\Exception $e) {
+                return false;
+            }
+        }
+
+        try {
+            $group  = $engine->group($pname);
             if (!$group->id) return false;
             $success = $group->addMember($user->id);
         } catch (\Gini\BPM\Exception $e) {
@@ -210,4 +243,3 @@ class BPM extends \Gini\Controller\CGI
         return \Gini\IoC::construct('\Gini\CGI\Response\JSON', $bool ? true : T('操作失败'));
     }
 }
-
