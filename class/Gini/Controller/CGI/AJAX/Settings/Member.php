@@ -81,6 +81,12 @@ class Member extends \Gini\Controller\CGI
             return \Gini\IoC::construct('\Gini\CGI\Response\Nothing');
         }
 
+        if ($type === 'gateway') {
+            $identitySource = \Gini\Config::get('app.node');
+            $info = \Gini\Gapper\Client::getRPC()->gapper->user->getUserByIdentity($identitySource, $username);
+            $username = $info['email'] ?: $username;
+        }
+
         $user = a('user', ['username' => $username]);
         if (!$user->id) {
             return \Gini\IoC::construct('\Gini\CGI\Response\Nothing');

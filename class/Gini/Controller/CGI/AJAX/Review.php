@@ -429,6 +429,8 @@ class Review extends \Gini\Controller\CGI
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
             'order'=> $order,
             'vTxtTitles' => \Gini\Config::get('haz.types')
+            'type' => 'history',
+            'instance' => $instance,
         ]));
     }
 
@@ -454,7 +456,8 @@ class Review extends \Gini\Controller\CGI
 
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
             'order'=> $order,
-            'task'=> $task
+            'task'=> $task,
+            'type'=> 'pending',
         ]));
     }
 

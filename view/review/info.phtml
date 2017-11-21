@@ -56,10 +56,28 @@
                     <?php }?>
                 </div>
                 <?php }?>
+                <?php if (\Gini\Config::get('app.is_show_order_instruction') && is_array($order->instruction) && isset($order->instruction['path'])) {
+                    $id = $type === 'history' ? $type.'-'.$instance->id : $type.'-'.$task->id;
+                ?>
+                    <div class="board-info-block">
+                        <div class="board-info-block-title"><?=H(T('化学品合法使用说明'))?></div>
+                        <div>
+                            <dl>
+                                <dt><?= H(T('使用说明附件')) ?></dt>
+                                <dd>
+                                    <?php
+                                        echo '<p><a href="review/attach-download/'.$id.'/'.$i.'/'.$index.'/instruction"><i class="fa fa-file"></i><span style="padding:0px 5px;">'.$order->instruction['name'].'</span></a></p>';
+                                    ?>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                <?php }?>
                 <?php
                     $items = $order->items;
                     $item = (array)current($items);
                     if ($item->customized) {
+                    $id = $type === 'history' ? $type.'-'.$instance->id : $type.'-'.$task->id;
                 ?>
                 <div class="board-info-block">
                     <div class="board-info-block-title"><?=H(T('资质信息'))?></div>
@@ -72,7 +90,7 @@
                                 if ($license_images = $vItem['license_images']) {
                                     foreach ((array)$license_images as $index => $license_image) {
                                         $name = $license_image['name'];
-                                        echo '<a href="review/attach-download/'.$task->id.'/'.$i.'/'.$index.'/license"><i class="fa fa-image"></i>'.$name.'</a>';
+                                        echo '<p><a href="review/attach-download/'.$id.'/'.$i.'/'.$index.'/license"><i class="fa fa-file"></i><span style="padding:0px 5px;">'.$name.'</span></a></p>';
                                     }
                                 }
                             }
@@ -88,7 +106,7 @@
                                 if ($extra_images = $vItem['extra_images']) {
                                     foreach ((array)$extra_images as $index => $extra_image) {
                                         $name = $extra_image['name'];
-                                        echo '<a href="review/attach-download/'.$task->id.'/'.$i.'/'.$index.'/extra"><i class="fa fa-image"></i>'.$name.'</a>';
+                                        echo '<p><a href="review/attach-download/'.$id.'/'.$i.'/'.$index.'/extra"><i class="fa fa-file"></i><span style="padding:0px 5px;">'.$name.'</span></a></p>';
                                     }
                                 }
                             }
