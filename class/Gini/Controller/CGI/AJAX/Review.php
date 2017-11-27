@@ -428,7 +428,7 @@ class Review extends \Gini\Controller\CGI
         if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
             'order'=> $order,
-            'vTxtTitles' => \Gini\Config::get('haz.types')
+            'vTxtTitles' => \Gini\Config::get('haz.types'),
             'type' => 'history',
             'instance' => $instance,
         ]));
