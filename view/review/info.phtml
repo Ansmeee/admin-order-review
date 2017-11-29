@@ -153,11 +153,11 @@
                         ]))?>
                     </div>
                 </div>
-                <?php if (\Gini\Config::get('app.is_show_order_reagent_purpose') === true && $order->purpose) { ?>
+                <?php if (\Gini\Config::get('app.is_show_order_purpose') === true && $order->purpose) { ?>
                 <div class="board-info-block">
-                    <div class="board-info-block-title"><?=H(T('试剂用途'))?></div>
+                    <div class="board-info-block-title"><?=H(T('用途'))?></div>
                         <dl style="overflow:hidden;text-overflow:ellipsis">
-                            <dt><?=H(T('试剂用途'))?></dt>
+                            <dt><?=H(T('用途'))?></dt>
                             <dd><?=H($order->purpose)?></dd>
                         </dl>
                     </dl>
