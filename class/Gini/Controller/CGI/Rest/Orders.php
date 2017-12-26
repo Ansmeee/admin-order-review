@@ -46,8 +46,8 @@ class Orders extends Base\Index
 
             foreach ($groups as $group) {
                 $data['list'][] = [
-                    "id"   =>  $group->id,
-                    "name" =>  $group->name
+                    "code"   =>  $group->id,
+                    "title" =>  $group->name
                 ];
             }
 
@@ -90,60 +90,56 @@ class Orders extends Base\Index
         $o = $engine->searchGroups($params);
         // 获取组信息
         $groups = $engine->getGroups($o->token, 0, $o->total);
-
-        $data = [
-            "total" => 0,
-            "list"  => []
-        ];
-
+        $data['total'] = 0;
         if (!count($groups)) {
             $response = $this->response(200, "获取成功", $data);
             return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
         }
+
         // 构建搜索条件
+        $search_params = [
+            'includeAssignedTasks' => true,
+            'sortBy'               => ['created' => 'desc']
+        ];
+
         foreach ($groups as $group) {
             $search_params['candidateGroup'][] = $group->id;
         }
-
-        $search_params['includeAssignedTasks'] = true;
-        $sortBy = [
-            'created' => 'desc'
-        ];
-        $search_params['sortBy'] = $sortBy;
+        // 搜索数据
         $rdata = $engine->searchTasks($search_params);
-        $tasks = $engine->getTasks($rdata->token, $start*$per_page, $per_page);
-        $data['total'] = $rdata->total;
         // 搜索结果为空直接返回
-        if (!$rdata->total) {
+        if (!$rdata || !$rdata->total) {
             $response = $this->response(200, "获取成功", $data);
             return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
         }
+        
+        $tasks = $engine->getTasks($rdata->token, $start*$per_page, $per_page);
+        $data['total'] = $rdata->total;
 
         foreach ($tasks as $task) {
+            // 获取订单信息
             $instance = $engine->processInstance($task->processInstanceId);
             $order = $this->_getOrderObject($instance);
 
             $info = [
-                "id"           => (int)$order->id,
+                "id"           => $task->id,
                 "ctime"        => $order->ctime ?: $order->request_date,
                 "voucher"      => $order->voucher,
                 "customer"     => $order->customer->name,
                 "vendor_name"  => $order->vendor_name ?: $order->vendor->name,
-                "price"        => money_format('%.2n', $vOrder->price),
-                "status"       => $this->_getInstanceStatus($engine, $instance),
-                "items"        => [],
+                "price"        => money_format('%.2n', $order->price),
+                "status"       => $this->_getInstanceStatus($engine, $instance)
             ];
-
+            // 获取货物信息
             $items = (array)$order->items;
             foreach ($items as $vPData) {
                 $vPData = (array)$vPData;
                 $item = [
                     "is_customized"     => $vPData['customized'] ? 1 : 0,
                     "customized_reason" => $vPData['customized'] && $vPData['reason'] ? $vPData['reason'] : '',
-                    "product_name"      => $vPData['name'].' * '.$vPData['quantity'],
-                    "type"              => []
+                    "product_name"      => $vPData['name'].' * '.$vPData['quantity']
                 ];
-
+                // 获取货物标签
                 if ($vPData['cas_no']) {
                    $item['type'] = $this->_getCasNoTypes($vPData['cas_no']);
                 }
@@ -183,29 +179,28 @@ class Orders extends Base\Index
 
         // 获取审批流程
         list($process, $engine) = $this->_getProcessEngine();
-        $tasks = [];
 
         $data = [
-            "total" => 0,
-            "list"  => []
+            "total" => 0
         ];
-
+        // 如果没有group_id，默认获取到第一个组的信息
         $group_id = $form['group_id'];
         if (!$group_id) {
-           $params['member'] = $me->id;
-           $params['type'] = $process->id;
-           // 搜索组信息
-           $o = $engine->searchGroups($params);
-           // 获取组信息
-           $groups = $engine->getGroups($o->token, 0, $o->total);
+            $user = $me->isAllowedTo('管理权限') ? null : $me;
+            $params['member'] = $user->id;
+            $params['type']   = $process->id;
+            // 搜索组信息
+            $o = $engine->searchGroups($params);
+            // 获取组信息
+            $groups = $engine->getGroups($o->token, 0, $o->total);
 
-           if (!count($groups)) {
-                $response = $this->response(200, "获取成功", $data);
-                return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
-           }
+            if (!count($groups)) {
+                 $response = $this->response(200, "获取成功", $data);
+                 return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+            }
 
-           $_group = current($groups);
-           $group_id = $_group->id;
+            $_group = current($groups);
+            $group_id = $_group->id;
         }
 
         $candidateGroup = $engine->group($group_id);
@@ -224,15 +219,14 @@ class Orders extends Base\Index
         }
 
         // 构造搜索条件
-        $params['sortBy'] = [
-            'startTime' => 'desc'
+        $search_params = [
+            'sortBy'         => ['startTime' => 'desc'],
+            'candidateGroup' => $candidateGroup->id,
+            'history'        => true
         ];
-        $params['candidateGroup'][] = $candidateGroup->id;
-        $params['history'] = true;
         // 获取订单信息
-        $result = $engine->searchTasks($params);
-        $tasks = $engine->getTasks($result->token, $start*$per_page, $per_page);
-
+        $result = $engine->searchTasks($search_params);
+        $tasks  = $engine->getTasks($result->token, $start*$per_page, $per_page);
         $data['total'] = $result->total;
         if (!$result->total || !count($tasks)) {
             $response = $this->response(200, "获取成功", $data);
@@ -243,36 +237,32 @@ class Orders extends Base\Index
             $instanceIds[] = $task->processInstanceId;
         }
 
-        $searchInstanceParams['sortBy'] = $sortBy;
-        $searchInstanceParams['history'] = true;
-        $searchInstanceParams['processInstance'] = $instanceIds;
-        $rdata = $engine->searchProcessInstances($searchInstanceParams);
+        $search_params['processInstance'] = $instanceIds;
+        $rdata = $engine->searchProcessInstances($search_params);
         $instances = $engine->getProcessInstances($rdata->token, 0, $rdata->total);
 
         foreach ($instances as $instance) {
             $order = $this->_getOrderObject($instance,true);
 
             $info = [
-                "id"           => (int)$order->id,
+                "id"           => $instance->id,
                 "ctime"        => $order->ctime ?: $order->request_date,
                 "voucher"      => $order->voucher,
                 "customer"     => $order->customer->name,
                 "vendor_name"  => $order->vendor_name ?: $order->vendor->name,
-                "price"        => money_format('%.2n', $vOrder->price),
-                "status"       => $this->_getInstanceStatus($engine, $instance),
-                "items"        => [],
+                "price"        => money_format('%.2n', $order->price),
+                "status"       => $this->_getInstanceStatus($engine, $instance)
             ];
-
+            // 获取商品信息
             $items = (array)$order->items;
             foreach ($items as $vPData) {
                 $vPData = (array)$vPData;
                 $item = [
                     "is_customized"     => $vPData['customized'] ? 1 : 0,
                     "customized_reason" => $vPData['customized'] && $vPData['reason'] ? $vPData['reason'] : '',
-                    "product_name"      => $vPData['name'].' * '.$vPData['quantity'],
-                    "type"              => []
+                    "product_name"      => $vPData['name'].' * '.$vPData['quantity']
                 ];
-
+                // 获取商品标签
                 if ($vPData['cas_no']) {
                    $item['type'] = $this->_getCasNoTypes($vPData['cas_no']);
                 }
@@ -286,6 +276,191 @@ class Orders extends Base\Index
         $response = $this->response(200, "获取成功", $data);
         return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
 
+    }
+
+    /**
+        * @brief 获待订单跟踪记录
+        *
+        * @return
+     */
+    public function getTraceMessage()
+    {
+        $me = _G('ME');
+        $group = _G('GROUP');
+        if (!$me->id || !$group->id) {
+            $response = $this->response(401, T('无权访问'));
+            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+        }
+
+        // 验证参数
+        $form = $this->form;
+        $id = $form['id'];
+        if (!$form || !$id) {
+            $response = $this->response(403, T('参数错误'));
+            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+        }
+
+        try{
+            $conf = \Gini\Config::get('app.order_review_process');
+            $processName = $conf['name'];
+            $engine = \Gini\BPM\Engine::of('order_review');
+            // 获取订单审批
+            $instance = $engine->processInstance($id);
+            if (!$instance->id) {
+                $response = $this->response(403, T('参数错误'));
+                return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+            };
+            // 获取审批记录
+            $params['variableName'] = 'comment';
+            // 获取审批信息
+            $rdata = $instance->getVariables($params);
+            if (is_array($rdata) && count($rdata)) {
+                if (current($rdata)['value']) {
+                    $comments = json_decode(current($rdata)['value']);
+                    $data['list'] = [];
+                    foreach ($comments as $comment) {
+                        $data['list'][] = [
+                            "reason"    => $comment->message,
+                            "traces"    => [
+                                "group"  => $comment->group,
+                                "user"   => $comment->user,
+                                "time"   => $comment->date
+                            ]
+                        ];
+                    }
+
+                    $response = $this->response(200, "获取成功", $data);
+                    return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+
+                } else {
+                    throw new \Gini\BPM\Exception();
+                }
+            } else {
+                throw new \Gini\BPM\Exception();
+            }
+
+        } catch (\Gini\BPM\Exception $e) {
+            $data = [
+                "list" => [
+                    [
+                        "reason" => T("暂无跟踪记录"),
+                        "traces" => [
+                            "group"  => T(''),
+                            "user"   => T(''),
+                            "time"   => T('')
+                        ]
+                    ]
+                ]
+            ];
+            $response = $this->response(200, "获取成功", $data);
+            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+        }
+    }
+
+    /**
+    * @brief 同意订单
+    *
+    * @return
+     */
+    public function postAgree()
+    {
+        $me = _G('ME');
+        $group = _G('GROUP');
+        if (!$me->id || !$group->id) {
+            $response = $this->response(401, T('无权访问'));
+            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+        }
+
+        // 验证参数
+        $form = $this->form;
+        $ids = $form['id'];
+        if (!$form || !$ids) {
+            $response = $this->response(403, T('参数错误'));
+            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+        }
+
+        $reason = $form['reason'];
+
+        list($process, $engine) = $this->_getProcessEngine();
+        if (!$process->id) {
+            $response = $this->response(403, T('参数错误'));
+            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+        }
+
+        $db = \Gini\Database::db('mall-old');
+        $db->beginTransaction();
+
+        foreach ($ids as $id) {
+            // 获取审批信息
+            $task = $engine->task($id);
+            // 获取组信息
+            $candidate_group = $engine->group($task->assignee);
+            // 获取订单信息
+            $order = (array) json_decode($task->getVariables('data')['value']);
+
+            $params = [
+                ':voucher' => $order['voucher'],
+                ':date' => date('Y-m-d H:i:s'),
+                ':operator' => $me->id,
+                ':type' => \Gini\ORM\Order::OPERATE_TYPE_APPROVE,
+                ':name' => $me->name,
+                ':description' => $candidate_group->name.T('审批人'),
+            ];
+            // 向数据库插入信息
+            $sql = "insert into order_operate_info (voucher,operate_date,operator_id,type,name,description) values (:voucher, :date, :operator, :type, :name, :description)";
+            $query = $db->query($sql, null, $params);
+            // 如果数据库插入错误，或者更新订单审批信息错误
+            if (!$query || !$this->_updateOrder($id, $engine, $me, $reason, true)) {
+                $db->rollback();
+                $response = $this->response(400, T('操作失败'));
+                return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+            }
+        }
+        $db->commit();
+        $response = $this->response(200, T('操作成功'));
+        return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+    }
+
+    /**
+    * @brief 拒绝订单
+    *
+    * @return
+     */
+    public function postRefuse()
+    {
+        $me = _G('ME');
+        $group = _G('GROUP');
+        if (!$me->id || !$group->id) {
+            $response = $this->response(401, T('无权访问'));
+            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+        }
+
+        // 验证参数
+        $form = $this->form;
+        $ids = $form['id'];
+        if (!$form || !$ids) {
+            $response = $this->response(403, T('参数错误'));
+            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+        }
+
+        $reason = $form['reason'];
+
+        list($process, $engine) = $this->_getProcessEngine();
+        if (!$process->id) {
+            $response = $this->response(403, T('参数错误'));
+            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+        }
+
+        foreach ($ids as $id) {
+            // 如果更新订单审批信息出现错误
+            if (!$this->_updateOrder($id, $engine, $me, $reason, false)) {
+                $response = $this->response(400, T('操作失败'));
+                return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+            }
+        }
+
+        $response = $this->response(200, T('操作成功'));
+        return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
     }
 
     private function _getProcessEngine()
@@ -354,6 +529,77 @@ class Orders extends Base\Index
         }
 
         return $arr;
+    }
+
+    private function _updateOrder($id, $engine, $user, $message, $type)
+    {
+        try {
+            // 获取审批信息
+            $task = $engine->task($id);
+            // 获取组信息
+            $candidate_group = $engine->group($task->assignee);
+            // 获取订单信息
+            $order = (array) json_decode($task->getVariables('data')['value']);
+
+            $comment = [
+                'message' => $message,
+                'group'   => $candidate_group->name,
+                'user'    => $user->name,
+                'date'    => date('Y-m-d H:i:s')
+            ];
+            // 获取之前的审批信息
+            $his_comment = [];
+            $instance = $engine->processInstance($task->processInstanceId);
+            $params['variableName'] = 'comment';
+            $rdata = $instance->getVariables($params);
+            if ($rdata) {
+                $his_comment = json_decode(current($rdata)['value']);
+            }
+            // 更新审批信息
+            array_push($his_comment, $comment);
+            $params['value'] = json_encode($his_comment);
+            $params['type'] = 'Json';
+            if ($instance->setVariable($params)) {
+                // 获取当前审批进度
+                $step_arr = explode('-', $task->assignee);
+                $conf = \Gini\Config::get('app.order_review_process');
+                $steps = $conf['steps'];
+                foreach ($step_arr as $step) {
+                    if (in_array($step, $steps)) {
+                        $now_step = $step;
+                        break;
+                    }
+                }
+                $_params[$now_step.'_'.$conf['option']] = $type;
+                // 更新当前审批进度
+                if ($task->complete($_params)) {
+                    $description = [
+                        'a' => T('**:group** **:name** **:opt**', [
+                            ':group'=> $candidate_group->name,
+                            ':name' => $user->name,
+                            ':opt' => $type ? T('审核通过') : T('拒绝')
+                        ]),
+                        't' => date('Y-m-d H:i:s'),
+                        'u' => $user->id,
+                        'd' => $message,
+                    ];
+
+                    $customizedMethod = ['\\Gini\\Process\\Engine\\SJTU\\Task', 'doUpdate'];
+                    if (method_exists('\\Gini\\Process\\Engine\\SJTU\\Task', 'doUpdate')) {
+                        if (!call_user_func($customizedMethod, $order, $description)) return false;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+            return true;
+        } catch (\Gini\BPM\Exception $e) {
+            return false;
+        }    
     }
 
 }
