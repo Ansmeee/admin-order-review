@@ -119,7 +119,7 @@ class Review extends Layout\Board
             'vTxtTitles' => \Gini\Config::get('haz.types')
         ]);
     }
-    
+
     public function actionAttachDownload($id, $item_index=0, $license_index=0, $type)
     {
         $explode = explode('-', $id);
@@ -152,7 +152,21 @@ class Review extends Layout\Board
 
         $fullpath = \Gini\Core::locateFile('data/customized/'.$info['path']);
         if(is_file($fullpath)) {
-            header("Content-Disposition: attachment; filename=".basename($fullpath));
+            $client = $_SERVER["HTTP_USER_AGENT"];
+            $filename = $info['name'];
+            $encoded_filename = urlencode($filename);
+            $encoded_filename = str_replace("+", "%20", $encoded_filename);
+
+            header('Content-Type: application/octet-stream');
+
+            //兼容IE11
+            if(preg_match("/MSIE/", $client) || preg_match("/Trident\/7.0/", $client)){
+                header('Content-Disposition: attachment; filename="' . $encoded_filename . '"');
+            } else if (preg_match("/Firefox/", $client)) {
+                header('Content-Disposition: attachment; filename*="utf8\'\'' . $filename . '"');
+            } else {
+                header('Content-Disposition: attachment; filename="' . $filename . '"');
+            }
             readfile($fullpath);
             exit;
         }
