@@ -122,20 +122,21 @@ class Review extends Layout\Board
 
     public function actionAttachDownload($id, $item_index=0, $license_index=0, $type)
     {
-        $explode = explode('-', $id);
+        $explode = explode('-', $id, 2);
         $approvalType = $explode[0];
         $id = $explode[1];
         if (!$id) return;
 
-        $processName = \Gini\Config::get('app.order_review_process');
-        $engine = \Gini\Process\Engine::of('default');
+        $conf = \Gini\Config::get('app.order_review_process');
+        $engine = \Gini\BPM\Engine::of('order_review');
+        $process = $engine->process($conf['name']);
 
         if ($approvalType == 'pending') {
             $task = $engine->getTask($id);
             if (!$task || !$task->id) return;
             $instance = $task->instance;
         } else {
-            $instance = $engine->fetchProcessInstance($processName, $id);
+            $instance = $engine->processInstance($id);
             if (!$instance->id) return;
         }
 
@@ -174,10 +175,12 @@ class Review extends Layout\Board
 
     private function _getInstanceObject($instance, $force=false)
     {
-        $data = $instance->getVariable('data');
+        $params['variableName'] = 'data';
+        $rdata = $instance->getVariables($params);
+        $data = json_decode(current($rdata)['value']);
 
         if ($force) {
-            $order = a('order', ['voucher'=> $data['voucher']]);
+            $order = a('order', ['voucher' => $data->voucher]);
         }
         if (!$order || !$order->id) {
             $order = a('order');
