@@ -119,23 +119,24 @@ class Review extends Layout\Board
             'vTxtTitles' => \Gini\Config::get('haz.types')
         ]);
     }
-    
+
     public function actionAttachDownload($id, $item_index=0, $license_index=0, $type)
     {
-        $explode = explode('-', $id);
+        $explode = explode('-', $id, 2);
         $approvalType = $explode[0];
         $id = $explode[1];
         if (!$id) return;
 
-        $processName = \Gini\Config::get('app.order_review_process');
-        $engine = \Gini\Process\Engine::of('default');
+        $conf = \Gini\Config::get('app.order_review_process');
+        $engine = \Gini\BPM\Engine::of('order_review');
+        $process = $engine->process($conf['name']);
 
         if ($approvalType == 'pending') {
             $task = $engine->getTask($id);
             if (!$task || !$task->id) return;
             $instance = $task->instance;
         } else {
-            $instance = $engine->fetchProcessInstance($processName, $id);
+            $instance = $engine->processInstance($id);
             if (!$instance->id) return;
         }
 
@@ -152,7 +153,21 @@ class Review extends Layout\Board
 
         $fullpath = \Gini\Core::locateFile('data/customized/'.$info['path']);
         if(is_file($fullpath)) {
-            header("Content-Disposition: attachment; filename=".basename($fullpath));
+            $client = $_SERVER["HTTP_USER_AGENT"];
+            $filename = $info['name'];
+            $encoded_filename = urlencode($filename);
+            $encoded_filename = str_replace("+", "%20", $encoded_filename);
+
+            header('Content-Type: application/octet-stream');
+
+            //兼容IE11
+            if(preg_match("/MSIE/", $client) || preg_match("/Trident\/7.0/", $client)){
+                header('Content-Disposition: attachment; filename="' . $encoded_filename . '"');
+            } else if (preg_match("/Firefox/", $client)) {
+                header('Content-Disposition: attachment; filename*="utf8\'\'' . $filename . '"');
+            } else {
+                header('Content-Disposition: attachment; filename="' . $filename . '"');
+            }
             readfile($fullpath);
             exit;
         }
@@ -160,10 +175,12 @@ class Review extends Layout\Board
 
     private function _getInstanceObject($instance, $force=false)
     {
-        $data = $instance->getVariable('data');
+        $params['variableName'] = 'data';
+        $rdata = $instance->getVariables($params);
+        $data = json_decode(current($rdata)['value']);
 
         if ($force) {
-            $order = a('order', ['voucher'=> $data['voucher']]);
+            $order = a('order', ['voucher' => $data->voucher]);
         }
         if (!$order || !$order->id) {
             $order = a('order');

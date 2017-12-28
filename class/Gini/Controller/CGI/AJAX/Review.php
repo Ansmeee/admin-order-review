@@ -165,10 +165,6 @@ class Review extends \Gini\Controller\CGI
             $order = $data;
         }
 
-        if (\Gini\Config::get('app.is_show_order_reagent_purpose') === true) {
-            $order->purpose = $data->purpose;
-        }
-
         return $order;
     }
 
@@ -424,7 +420,7 @@ class Review extends \Gini\Controller\CGI
 
         $instance = $engine->processInstance($id);
         if (!$instance || !$instance->id) return;
-        $order = $this->_getOrderObject($instance);
+        $order = $this->_getOrderObject($instance,true);
         if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
             'order'=> $order,
