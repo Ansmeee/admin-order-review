@@ -3,9 +3,9 @@
 namespace Gini\Controller\CGI\Rest;
 
 
-class Order extends \Gini\Controller\CGI\Layout
+class Order extends \Gini\Controller\Rest
 {
-    public function actionApprove()
+    public function postApprove()
     {
         $content = file_get_contents('php://input');
         $order_data = (array) json_decode($content);
@@ -31,7 +31,7 @@ class Order extends \Gini\Controller\CGI\Layout
         }
     }
 
-    public function actionReject()
+    public function postReject()
     {
         $content = file_get_contents('php://input');
         $order_data = json_decode($content);
@@ -52,7 +52,7 @@ class Order extends \Gini\Controller\CGI\Layout
         }
     }
 
-    public function actionSendMsg()
+    public function postSendMsg()
     {
         $content = file_get_contents('php://input');
         $rdata = explode('&', $content);

@@ -51,11 +51,12 @@ class Debade extends \Gini\Controller\API
 
         $cacheData['customized'] = $data['customized'] ? true : false;
         $cacheData['chemicalTypes'] = $types;
-
         //设置 candidate_group
         $key = "labmai-".$node."/".$data['group_id'];
         $info = (array)\Gini\TagDB\Client::of('rpc')->get($key);
         $cacheData['candidate_group'] = $info['organization']['school_code'];
+        $department = $info['organization']['department_code'];
+        $cacheData['department_type'] = $this->_getDepartmentType($department) ?: '';
 
         $steps = $conf['steps'];
         foreach ($steps as $step) {
@@ -78,6 +79,23 @@ class Debade extends \Gini\Controller\API
         if ($instance->id && $instance->id!=$instanceID) {
             $this->_setOrderInstanceID($processName, $data['voucher'], $instance->id);
         }
+    }
+
+    // 获取院系类别
+    private function _getDepartmentType($dep = '')
+    {
+        $departmentTypes = \Gini\Config::get('app.department_type');
+        if (!count($departmentTypes)) {
+            return false;
+        }
+
+        foreach ($departmentTypes as $type => $codes) {
+            if (in_array($dep, explode(',', $codes))) {
+                return $type;
+            }
+        }
+
+        return false;
     }
 
     // 订单是否可以进入审批流程
