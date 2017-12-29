@@ -125,29 +125,31 @@ class Review extends Layout\Board
         $explode = explode('-', $id);
         $approvalType = $explode[0];
         $id = $explode[1];
-        if (!$id) return;
+        if (!$id) return  $this->redirect('error/404');
 
         $processName = \Gini\Config::get('app.order_review_process');
         $engine = \Gini\Process\Engine::of('default');
 
         if ($approvalType == 'pending') {
             $task = $engine->getTask($id);
-            if (!$task || !$task->id) return;
+            if (!$task || !$task->id) return  $this->redirect('error/404');
             $instance = $task->instance;
         } else {
             $instance = $engine->fetchProcessInstance($processName, $id);
-            if (!$instance->id) return;
+            if (!$instance->id) return  $this->redirect('error/404');
         }
 
         $order = $this->_getInstanceObject($instance, true);
-        $items = $order->items;
-        $info  = $items[$item_index][$type.'_images'][$license_index];
 
         if ((\Gini\Config::get('app.is_show_order_instruction') === true) && ($type === 'instruction')) {
             $info = [
                 'name' => $order->instruction['name'],
                 'path' => $order->instruction['path'],
             ];
+        } else {
+            $items = $order->items;
+            $item  = (array)$items[$item_index];
+            $info  = (array)$item[$type.'_images'][$license_index];
         }
 
         $fullpath = \Gini\Core::locateFile('data/customized/'.$info['path']);
@@ -155,6 +157,8 @@ class Review extends Layout\Board
             header("Content-Disposition: attachment; filename=".basename($fullpath));
             readfile($fullpath);
             exit;
+        } else {
+            return $this->redirect('error/404');
         }
     }
 

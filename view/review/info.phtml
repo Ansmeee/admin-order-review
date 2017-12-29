@@ -76,7 +76,7 @@
                 <?php
                     $items = $order->items;
                     $item = (array)current($items);
-                    if ($item->customized) {
+                    if ($item['customized']) {
                     $id = $type === 'history' ? $type.'-'.$instance->id : $type.'-'.$task->id;
                 ?>
                 <div class="board-info-block">
@@ -89,7 +89,7 @@
                                 $vItem = (array)$vItem;
                                 if ($license_images = $vItem['license_images']) {
                                     foreach ((array)$license_images as $index => $license_image) {
-                                        $name = $license_image['name'];
+                                        $name = $license_image->name;
                                         echo '<p><a href="review/attach-download/'.$id.'/'.$i.'/'.$index.'/license"><i class="fa fa-file"></i><span style="padding:0px 5px;">'.$name.'</span></a></p>';
                                     }
                                 }
@@ -105,7 +105,7 @@
                                 $vItem = (array) $vItem;
                                 if ($extra_images = $vItem['extra_images']) {
                                     foreach ((array)$extra_images as $index => $extra_image) {
-                                        $name = $extra_image['name'];
+                                        $name = $extra_image->name;
                                         echo '<p><a href="review/attach-download/'.$id.'/'.$i.'/'.$index.'/extra"><i class="fa fa-file"></i><span style="padding:0px 5px;">'.$name.'</span></a></p>';
                                     }
                                 }
