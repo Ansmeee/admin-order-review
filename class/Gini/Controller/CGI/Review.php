@@ -122,7 +122,7 @@ class Review extends Layout\Board
     
     public function actionAttachDownload($id, $item_index=0, $license_index=0, $type)
     {
-        $explode = explode('-', $id);
+        $explode = explode('-', $id, 2);
         $approvalType = $explode[0];
         $id = $explode[1];
         if (!$id) return  $this->redirect('error/404');
@@ -131,13 +131,13 @@ class Review extends Layout\Board
         $engine = \Gini\Process\Engine::of('default');
 
         if ($approvalType == 'pending') {
-            $task = $engine->getTask($id);
+            $task = $engine->task($id);
             if (!$task || !$task->id) return  $this->redirect('error/404');
-            $instance = $task->instance;
-        } else {
-            $instance = $engine->fetchProcessInstance($processName, $id);
-            if (!$instance->id) return  $this->redirect('error/404');
+            $id = $task->processInstanceId;
         }
+        // 获取订单信息
+        $instance = $engine->processInstance($id);
+        if (!$instance || !$instance->id) return  $this->redirect('error/404');
 
         $order = $this->_getInstanceObject($instance, true);
 
