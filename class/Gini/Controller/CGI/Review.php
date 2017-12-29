@@ -164,14 +164,20 @@ class Review extends Layout\Board
 
     private function _getInstanceObject($instance, $force=false)
     {
-        $data = $instance->getVariable('data');
+        $params['variableName'] = 'data';
+        $rdata = $instance->getVariables($params);
+        $data = json_decode(current($rdata)['value']);
 
         if ($force) {
-            $order = a('order', ['voucher'=> $data['voucher']]);
+            $order = a('order', ['voucher' => $data->voucher]);
         }
+
         if (!$order || !$order->id) {
-            $order = a('order');
-            $order->setData($data);
+            $order = $data;
+        }
+
+        if (\Gini\Config::get('app.is_show_order_reagent_purpose') === true) {
+            $order->purpose = $data->purpose;
         }
 
         return $order;
