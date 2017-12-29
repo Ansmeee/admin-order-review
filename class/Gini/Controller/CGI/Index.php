@@ -100,9 +100,9 @@ class Index extends Layout\Board{
     public function actionOption($uId, $taskId)
     {
         $me = _G('ME');
-        $gorup = _G('GROUP');
+        $group = _G('GROUP');
         $user = a('user', (int)$uId);
-        if (!$gorup->id || !$user->id || !$me->id || $me->id != $user->id) {
+        if (!$group->id || !$me->id || !$user->id || $me->id != $user->id) {
             $this->redirect('error/401');
         }
 
@@ -149,4 +149,3 @@ class Index extends Layout\Board{
         }
     }
 }
-

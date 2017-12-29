@@ -4,10 +4,8 @@ namespace Gini\Controller\API\Mall;
 
 class Portal extends \Gini\Controller\API
 {
-    public function actionGetView($user, $mode)
+    public function actionGetView($id, $mode)
     {
-        $userInfo = $this->_getUserInfo($user);
-        $id = $userInfo['id'];
         list($process, $engine) = $this->_getProcessEngine();
 
         if (!$id || !$process->id) {
@@ -59,15 +57,11 @@ class Portal extends \Gini\Controller\API
     }
 
 
-    public function actionHasPerm($user, $mode)
+    public function actionHasPerm($userId, $mode)
     {
-        $userInfo = $this->_getUserInfo($user);
-        $id = $userInfo['id'];
-        if (!$id) return false;
-
         switch ($mode) {
             case 'admin_order_review':
-                $result = $this->_hasOrderReviewPerm($id, $mode);
+                $result = $this->_hasOrderReviewPerm($userId, $mode);
                 break;
         }
 
@@ -100,21 +94,6 @@ class Portal extends \Gini\Controller\API
         $data = json_decode(current($rdata)['value']);
 
         return $data;
-    }
-
-    private function _getUserInfo($identity)
-    {
-        if (!$identity) return false;
-        try {
-            $infos = (array)\Gini\Config::get('gapper.auth');
-            $gInfo = (object)$infos['gateway'];
-            $identitySource = @$gInfo->source;
-            $info = \Gini\Gapper\Client::getRPC()->gapper->user->getUserByIdentity($identitySource, $identity);
-        } catch (\Exception $e) {
-            return false;
-        }
-
-        return (array)$info;
     }
 
     private function _getProcessEngine()

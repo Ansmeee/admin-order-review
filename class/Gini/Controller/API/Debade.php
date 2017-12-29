@@ -65,6 +65,7 @@ class Debade extends \Gini\Controller\API
         }
         $cacheData['data'] = $message['data'];
         $cacheData['key'] = $processName;
+        $cacheData['voucher'] = $data['voucher'];
 
         $instanceID = $this->_getOrderInstanceID($processName, $data['voucher']);
         if ($instanceID) {
