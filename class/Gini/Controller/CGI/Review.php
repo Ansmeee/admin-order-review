@@ -125,30 +125,32 @@ class Review extends Layout\Board
         $explode = explode('-', $id, 2);
         $approvalType = $explode[0];
         $id = $explode[1];
-        if (!$id) return;
+        if (!$id) return  $this->redirect('error/404');
 
         $conf = \Gini\Config::get('app.order_review_process');
         $engine = \Gini\BPM\Engine::of('order_review');
         $process = $engine->process($conf['name']);
 
         if ($approvalType == 'pending') {
-            $task = $engine->getTask($id);
-            if (!$task || !$task->id) return;
-            $instance = $task->instance;
-        } else {
-            $instance = $engine->processInstance($id);
-            if (!$instance->id) return;
+            $task = $engine->task($id);
+            if (!$task || !$task->id) return  $this->redirect('error/404');
+            $id = $task->processInstanceId;
         }
+        // 获取订单信息
+        $instance = $engine->processInstance($id);
+        if (!$instance || !$instance->id) return  $this->redirect('error/404');
 
         $order = $this->_getInstanceObject($instance, true);
-        $items = $order->items;
-        $info  = $items[$item_index][$type.'_images'][$license_index];
 
         if ((\Gini\Config::get('app.is_show_order_instruction') === true) && ($type === 'instruction')) {
             $info = [
                 'name' => $order->instruction['name'],
                 'path' => $order->instruction['path'],
             ];
+        } else {
+            $items = $order->items;
+            $item  = (array)$items[$item_index];
+            $info  = (array)$item[$type.'_images'][$license_index];
         }
 
         $fullpath = \Gini\Core::locateFile('data/customized/'.$info['path']);
@@ -170,6 +172,8 @@ class Review extends Layout\Board
             }
             readfile($fullpath);
             exit;
+        } else {
+            return $this->redirect('error/404');
         }
     }
 
@@ -182,9 +186,13 @@ class Review extends Layout\Board
         if ($force) {
             $order = a('order', ['voucher' => $data->voucher]);
         }
+
         if (!$order || !$order->id) {
-            $order = a('order');
-            $order->setData($data);
+            $order = $data;
+        }
+
+        if (\Gini\Config::get('app.is_show_order_reagent_purpose') === true) {
+            $order->purpose = $data->purpose;
         }
 
         return $order;
