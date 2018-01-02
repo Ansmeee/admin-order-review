@@ -539,6 +539,7 @@ class Orders extends Base\Index
         $this->_addOrderInfoList($vendor, T("供应商"), $order->vendor_name ?: $order->vendor->name);
         $data['infos'][] = $vendor;
         // 买方信息
+        // 前端通过判断 type ，使用不同的渲染方式：2.订单列表进行渲染，1.其他的方式进行渲染
         $customer = [
             "type"   => 1,
             "title"  => T('买方信息')
@@ -570,6 +571,7 @@ class Orders extends Base\Index
                 "title"  => T('化学品合法使用说明')
             ];
             $this->_addOrderInfoList($attach_download, T("使用说明附件"), T($appInfo['url'].'/review/attach-download/'.$attch_id.'/0/0/instruction'));
+            $data['infos'][] = $attach_download;
         }
         // 自购附件信息
         $license_image_arr = [];
