@@ -95,7 +95,7 @@ class Review extends \Gini\Controller\CGI
 
             $params['processInstance'] = $instance->id;
             $o = $engine->searchTasks($params);
-            $tasks = $engine->getTasks($o->token, 0, $o->total);
+            $tasks = $engine->getTasks($o->token, 0, 1);
             $task = current($tasks);
             $group = $engine->group($task->assignee);
 
@@ -104,10 +104,29 @@ class Review extends \Gini\Controller\CGI
         }
     }
 
+    private function _getTaskStatus($engine, $task)
+    {
+        try {
+            $group = $engine->group($task->assignee);
+        } catch (\Gini\BPM\Exception $e) {
+            return T('等待审批');
+        }
+
+        return T('等待 :group 审批', [':group' => $group->name]);
+    }
+
+    private function _getTaskObject($task)
+    {
+        $rdata = $task->getVariables('data');
+        $data = json_decode($rdata['value']);
+
+        return $data;
+    }
+
     private function _showMoreTask($page, $querystring=null)
     {
         $me = _G('ME');
-        $limit = 25;
+        $limit = 20;
         $start = ($page - 1) * $limit;
         list($process, $engine) = $this->_getProcessEngine();
         $params['member'] = $me->id;
@@ -129,15 +148,14 @@ class Review extends \Gini\Controller\CGI
         $tasks = $engine->getTasks($rdata->token, $start, $limit);
 
         if (!count($tasks)) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
-
         $orders = [];
-        foreach ($tasks as $task) {
+
+        foreach ($tasks as $id => $task) {
             try {
-                $instance = $engine->processInstance($task->processInstanceId);
-                $object = $this->_getOrderObject($instance);
-                $object->instance = $instance;
-                $object->task_status = $this->_getInstanceStatus($engine, $instance);
-                $orders[$task->id] = $object;
+                $object = $this->_getTaskObject($task);
+                $object->instanceId = $task->processInstanceId;
+                $object->task_status = $this->_getTaskStatus($engine, $task);
+                $orders[$id] = $object;
             } catch (\Gini\BPM\Exception $e) {
                 continue;
             }
