@@ -32,14 +32,14 @@ abstract class Wechat extends \Gini\Controller\CGI\Layout
                             $this->redirect('wechat/user-bind-fail');
                         }
                     }
-                    $this->redirect($_SERVER['REQUEST_URI']);
+                    $this->redirect(\Gini\Module\AdminBase::getRedirectUrl($_SERVER['REQUEST_URI']));
                 }
             }
         }
         $me = _G('ME');
         if (!$me->id) {
             $token = \Gini\Session::tempToken();
-            $_SESSION[$token] = $_SERVER['REQUEST_URI'];
+            $_SESSION[$token] = \Gini\Module\AdminBase::getRedirectUrl($_SERVER['REQUEST_URI']);
             \Gini\Gapper\Client::goLogin($unionId ? 'wechat/bind-wechat/'.$token :null);
         }
 
@@ -50,7 +50,7 @@ abstract class Wechat extends \Gini\Controller\CGI\Layout
         $gatewayUrl = \Gini\Config::get('wechat.gateway')['url'];
         $token = md5(mt_rand());
         $this->redirect($gatewayUrl, [
-            'wx-redirect' => URL($_SERVER['REQUEST_URI']),
+            'wx-redirect' => \Gini\Module\AdminBase::getRedirectUrl($_SERVER['REQUEST_URI']),
             'wx-token' => $token
         ]);
     }

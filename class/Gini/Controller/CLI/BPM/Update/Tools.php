@@ -199,6 +199,14 @@ class Tools extends \Gini\Controller\ClI
         $his_engine = \Gini\Process\Engine::of('default');
         $his_process = $his_engine->getProcess($his_process_name);
 
+        $history_groups = (array) \Gini\Config::get('bpm.history_groups');
+        if (!count($history_groups)) {
+            $confirm = readline("新的分组名称和旧的分组名称没有做映射配置, 是否继续 Y/N : \n");
+            if ($confirm !== 'Y') {
+                return ;
+            }
+        }
+
         $processName = 'history-order-review-process';
         $conf = \Gini\Config::get('app.order_review_process');
         $engine = \Gini\BPM\Engine::of('order_review');
@@ -218,9 +226,14 @@ class Tools extends \Gini\Controller\ClI
                 $items = (array) json_decode($order_data['items']);
                 $order_data['items'] = $items;
                 $cacheData['data'] = $order_data;
+
+                $instanceID = $this->_getOrderInstanceID($processName, $order_data['voucher']);
+                if ($instanceID) continue;
+
                 $his_tasks = Those('sjtu/bpm/process/task')
                     ->Whose('instance')->is($instance)
                     ->orderBy('ctime', 'desc');
+
                 foreach ($his_tasks as $his_task) {
                     $com = [];
                     if ($his_task->user) {
@@ -234,7 +247,11 @@ class Tools extends \Gini\Controller\ClI
 
                     $comment[] = $com;
                     if ($his_task->candidate_group->id) {
-                        $candidate_groups[] = $conf['name'].'-'.$his_task->candidate_group->name;
+                        $candidate_group_name = $his_task->candidate_group->name;
+                        if (array_key_exists($candidate_group_name, $history_groups)) {
+                            $candidate_group_name = $history_groups[$candidate_group_name];
+                        }
+                        $candidate_groups[] = $conf['name'].'-'.$candidate_group_name;
                     }
                 }
 
@@ -252,6 +269,7 @@ class Tools extends \Gini\Controller\ClI
                             echo $instance->id.'---'.$create_instance->id."---task---".$task->id."---x\n";
                             continue;
                         }
+                        $this->_setOrderInstanceID($processName, $order_data['voucher'], $create_instance->id);
                         echo $instance->id.'---'.$create_instance->id."---o\n";
                     }
                 } catch (\Gini\BPM\Exception $e) {
@@ -259,5 +277,25 @@ class Tools extends \Gini\Controller\ClI
                 }
             }
         }
+    }
+
+    private function _getOrderInstanceID($processName, $voucher)
+    {
+        $node = \Gini\Config::get('app.node');
+        $key = "{$node}#order#{$voucher}";
+        $info = (array)\Gini\TagDB\Client::of('default')->get($key);
+        //$info = [ 'bpm'=> [ $processName=> [ 'instances'=> [ $instanceID, $latestinstanceid ] ] ] ]
+        $info = (array) $info['bpm'][$processName]['instances'];
+        return array_pop($info);
+    }
+
+    private function _setOrderInstanceID($processName, $voucher, $instanceID)
+    {
+        $node = \Gini\Config::get('app.node');
+        $key = "{$node}#order#{$voucher}";
+        $info = (array)\Gini\TagDB\Client::of('default')->get($key);
+        $info['bpm'][$processName]['instances'] = $info['bpm'][$processName]['instances'] ?: [];
+        array_push($info['bpm'][$processName]['instances'], $instanceID);
+        \Gini\TagDB\Client::of('default')->set($key, $info);
     }
 }
