@@ -28,7 +28,7 @@ class Orders extends Base\Index
         if ($me->isAllowedTo('管理权限')) {
             $data['list'][] = [
                 "model"  => T("authority"),
-                "title"  => T("权限设置"),
+                "title"  => T("设置分组"),
                 "path"   => T("/order/review/authority")
             ];
         }
