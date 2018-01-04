@@ -40,7 +40,7 @@ class Index extends Layout\Board{
         }
         $vars = [
             'type'=> 'history',
-            'current_group' => $current_group->id ? $current_group : current($groups),
+            'current_group' => $current_group->id ? $current_group : current((array)$groups),
             'groups' => $groups
         ];
 
