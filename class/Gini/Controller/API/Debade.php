@@ -58,7 +58,7 @@ class Debade extends \Gini\Controller\API
         $department = $info['organization']['department_code'];
         $cacheData['department_type'] = $this->_getDepartmentType($department) ?: '';
 
-        $steps = $conf['steps'];
+        $steps = array_keys($conf['steps']);
         foreach ($steps as $step) {
             if ($step == 'school') continue;
             $cacheData[$step] = $processName.'-'.$step;

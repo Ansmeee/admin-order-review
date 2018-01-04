@@ -188,8 +188,6 @@ class Review extends \Gini\Controller\CGI
 
     public function actionGetOPForm()
     {
-        if (!$this->_isAllowToOP()) return;
-
         $form = $this->form();
         $key = $form['key'];
         $id = $form['id'];
@@ -203,51 +201,79 @@ class Review extends \Gini\Controller\CGI
 
     public function actionPost()
     {
-        if (!$this->_isAllowToOP()) return;
-
-        $form = $this->form();
-        $key = $form['key'];
-        $id = $form['id'];
-        $note = $form['note'];
-
-        list($process, $engine) = $this->_getProcessEngine();
-        if (!$process->id) return;
-
-        $me = _G('ME');
-        try {
-            $task = $engine->task($id);
-            $rdata = $task->getVariables('data');
-            $data = (array)json_decode($rdata['value']);
-            $candidate_group = $engine->group($task->assignee);
-        } catch (\Gini\BPM\Exception $e) {
+        // 验证 用户
+        $me     = _G('ME');
+        $group  = _G('GROUP');
+        if (!$me->id || !$group->id) {
+            return ;
         }
 
-        if ($key=='approve') {
-            $db = \Gini\Database::db('mall-old');
-            $db->beginTransaction();
-            try {
-                $params = [
-                    ':voucher' => $data['voucher'],
-                    ':date' => date('Y-m-d H:i:s'),
-                    ':operator' => $me->id,
-                    ':type' => \Gini\ORM\Order::OPERATE_TYPE_APPROVE,
-                    ':name' => $me->name,
-                    ':description' => $candidate_group->name.T('审批人'),
-                ];
+        // 获取 表单信息
+        $form   = $this->form();
+        $key    = $form['key'];
+        $id     = $form['id'];
+        $note   = $form['note'];
 
-                $sql = "insert into order_operate_info (voucher,operate_date,operator_id,type,name,description) values (:voucher, :date, :operator, :type, :name, :description)";
-                $query = $db->query($sql, null, $params);
+        // 实例化 process 和 engine, task
+        list($process, $engine) = $this->_getProcessEngine();
+        if (!$process->id) return;
+        try {
+            $task               = $engine->task($id);
+            $instance           = $engine->processInstance($task->processInstanceId);
+            $candidateGroup     = $engine->group($task->assignee);
+        } catch (\Gini\BPM\Exception $e) {
+            return ;
+        }
 
-                if (!$query) throw new \Exception();
-                $bool = $this->_approve($engine, $task, $note);
-                if (!$bool) throw new \Exception();
-                $db->commit();
-            } catch (\Exception $e) {
-                $bool = false;
-                $db->rollback();
+        // 是否可以操作这个 task
+        $params = [
+            'user'              => $me,
+            'task'              => $task,
+            'candidateGroup'    => $candidateGroup,
+            'instance'          => $instance,
+            'process'           => $process,
+            'form'              => $form
+        ];
+        if (!$this->_isAllowToOP($params)) return;
+
+        try {
+            // 获取订单的数据 以及 task 的审批组
+            $rdata              = $task->getVariables('data');
+            $orderData          = (array)json_decode($rdata['value']);
+
+            // 操作远程 task 需要的参数
+            $data['task']           = $task;
+            $data['instance']       = $instance;
+            $data['engine']         = $engine;
+            $data['step']           = $this->_getCurrentStep($task->assignee);
+            $data['candidateGroup'] = $candidateGroup->name;
+            $data['message']        = $note;
+
+            // 操作本地订单记录 需要的参数
+            $updateData['message']            = $note;
+            $updateData['candidateGroup']     = $candidateGroup->name;
+            $updateData['orderData']          = $orderData;
+            $updateData['voucher']            = $orderData['voucher'];
+            $updateData['customized']         = $orderData['customized'];
+            $updateData['type']               = \Gini\ORM\Order::OPERATE_TYPE_APPROVE;
+            error_log(time());
+            if ($key=='approve') {
+                // 结束远程的 task 同时记录操作记录
+                $data['opt'] = true;
+                $bool = $this->_completeTask($data);
+                if (!$bool) throw new \Gini\BPM\Exception();
+                $updateData['opt']                = T('审核通过');
+            } else {
+                // 结束远程的 task 同时记录操作记录
+                $data['opt'] = false;
+                $bool = $this->_completeTask($data);
+                if (!$bool) throw new \Gini\BPM\Exception();
+                $updateData['opt']                = T('审核拒绝');
             }
-        } else {
-            $bool = $this->_reject($engine, $task, $note);
+            // 更新本地订单的操作信息
+            $this->_doUpdate($updateData, $me);
+        } catch (\Gini\BPM\Exception $e) {
+            $bool = false;
         }
 
         return \Gini\IoC::construct('\Gini\CGI\Response\JSON', [
@@ -257,32 +283,52 @@ class Review extends \Gini\Controller\CGI
         ]);
     }
 
-    private function _doUpdate($data, $user=null)
+    private function _doUpdate($data, $user)
     {
-        $now = date('Y-m-d H:i:s');
-        $user = $user ?: _G('ME');
-        $description = [
-            'a' => T('**:group** **:name** **:opt**', [
-                ':group'=> $data['candidate_group'],
-                ':name' => $user->name,
-                ':opt' => $data['opt']
-            ]),
-            't' => $now,
-            'u' => $user->id,
-            'd' => $data['message'],
-        ];
+        try {
+            $rpc = \Gini\Module\AppBase::getAppRPC('order');
+            if (!$rpc) return false;
+            // 更新订单的跟踪信息
+            $now = date('Y-m-d H:i:s');
+            $bool = $rpc->mall->order->updateOrder($data['voucher'], [
+                'hash_rand_key' => $now,
+                'description'   => [
+                    'a' => T('**:group** **:name** **:opt**', [
+                        ':group'    => $data['candidateGroup'],
+                        ':name'     => $user->name,
+                        ':opt'      => $data['opt']
+                    ]),
+                    't' => $now,
+                    'u' => $user->id,
+                    'd' => $data['message'],
+                ]
+            ]);
 
-        $customizedMethod = ['\\Gini\\Process\\Engine\\SJTU\\Task', 'doUpdate'];
-        if (method_exists('\\Gini\\Process\\Engine\\SJTU\\Task', 'doUpdate')) {
-            $bool = call_user_func($customizedMethod, $data['order_data'], $description);
+            // 在mall-old 记录操作记录
+            if (!$data['customized']) {
+                $params = [
+                    ':voucher'      => $data['voucher'],
+                    ':date'         => date('Y-m-d H:i:s'),
+                    ':operator'     => $user->id,
+                    ':type'         => $data['type'],
+                    ':name'         => $user->name,
+                    ':description'  => $data['candidateGroup'].T('审批人'),
+                ];
+                $db = \Gini\Database::db('mall-old');
+                $sql = "insert into order_operate_info (voucher,operate_date,operator_id,type,name,description) values (:voucher, :date, :operator, :type, :name, :description)";
+                $db->query($sql, null, $params);
+            }
+        } catch (\Exception $e) {
+            return false;
         }
-        return $bool;
+
+        return true;
     }
 
     private function _getCurrentStep($assignee)
     {
         $conf = \Gini\Config::get('app.order_review_process');
-        $steps = $conf['steps'];
+        $steps = array_keys($conf['steps']);
         $step_arr = explode('-', $assignee);
         foreach ($step_arr as $step) {
             if (in_array($step, $steps)) {
@@ -291,12 +337,13 @@ class Review extends \Gini\Controller\CGI
             }
         }
         $opt = $now_step.'_'.$conf['option'];
+
         return $opt;
     }
 
-    private function _addComment($engine, $task, array $comment) {
+    private function _addComment($engine, $instance, array $comment)
+    {
         $his_comment = [];
-        $instance = $engine->processInstance($task->processInstanceId);
         $params['variableName'] = 'comment';
         $rdata = $instance->getVariables($params);
         if ($rdata) {
@@ -309,107 +356,53 @@ class Review extends \Gini\Controller\CGI
         return $result;
     }
 
-    private function _approve($engine, $task, $message = '') {
-        $comment = [];
-        try {
-            $rData = $task->getVariables('data');
-            $order_data = (array) json_decode($rData['value']);
-            $assignee = $task->assignee;
-            $candidate_group = $engine->group($assignee);
-            $comment = [
-                'message' => $message,
-                'group' => $candidate_group->name,
-                'user' => _G('ME')->name,
-                'date' => date('Y-m-d H:i:s')
-            ];
-            $res = $this->_addComment($engine, $task, $comment);
-            if ($res) {
-                $opt = $this->_getCurrentStep($assignee);
-                $params[$opt] = true;
-                $bool = $task->complete($params);
-                if ($bool) {
-                    $data['opt'] = T('审核通过');
-                    $data['message'] = $message;
-                    $data['candidate_group'] = $candidate_group->name;
-                    $data['order_data'] = $order_data;
-                    $this->_doUpdate($data);
-                }
-            }
-        } catch (\Gini\BPM\Exception $e) {
-        }
-
-        return $bool;
-    }
-
-    private function _reject($engine, $task, $message = '') {
-        try {
-            $rData = $task->getVariables('data');
-            $order_data = (array) json_decode($rData['value']);
-            $assignee = $task->assignee;
-            $candidate_group = $engine->group($assignee);
-            $comment = [
-                'message' => $message,
-                'group' => $candidate_group->name,
-                'user' => _G('ME')->name,
-                'date' => date('Y-m-d H:i:s')
-            ];
-            $res = $this->_addComment($engine, $task, $comment);
-            if ($res) {
-                $opt = $this->_getCurrentStep($assignee);
-                $params[$opt] = false;
-                $bool = $task->complete($params);
-                if ($bool) {
-                    $data['opt'] = T('拒绝');
-                    $data['message'] = $message;
-                    $data['candidate_group'] = $candidate_group->name;
-                    $data['order_data'] = $order_data;
-                    $this->_doUpdate($data);
-                }
-            }
-        } catch (\Gini\BPM\Exception $e) {
-        }
-        return $bool;
-    }
-
-    private function _isAllowToOP()
+    private function _completeTask($criteria = [])
     {
-        $me = _G('ME');
-        $group = _G('GROUP');
-        if (!$me->id || !$group->id) {
-            return;
+        $task       = $criteria['task'];
+        $instance   = $criteria['instance'];
+        $engine     = $criteria['engine'];
+        $step       = $criteria['step'];
+        try {
+            // 记录 instance 的操作信息
+            $comment = [
+                'message'   => $criteria['message'],
+                'group'     => $criteria['candidateGroup'],
+                'user'      => _G('ME')->name,
+                'date'      => date('Y-m-d H:i:s')
+            ];
+            $res = $this->_addComment($engine, $instance, $comment);
+            if ($res) {
+                // 结束这个 task
+                $params[$step]   = $criteria['opt'] ? true : false;
+                $bool            = $task->complete($params);
+            }
+        } catch (\Gini\BPM\Exception $e) {
+            return false;
         }
 
-        $form = $this->form();
-        $key = $form['key'];
-        $id = $form['id'];
+        return $bool;
+    }
 
-        if (!$id || !in_array($key, ['approve', 'reject'])) return;
+    private function _isAllowToOP($criteria = [])
+    {
+        $key            = $criteria['form']['key'];
+        $user           = $criteria['user'];
+        $task           = $criteria['task'];
+        $candidateGroup = $criteria['candidateGroup'];
+        $instance       = $criteria['instance'];
+        $process        = $criteria['process'];
 
-        list($process, $engine) = $this->_getProcessEngine();
-        if (!$process->id) return;
+        // 参数是否合法
+        if (!$task->id || !$instance->id || !$process->id || !$candidateGroup->id || !in_array($key, ['approve', 'reject'])) return;
 
         try {
-            $task = $engine->task($id);
-            $instance_id = $task->processInstanceId;
-            $params['member'] = $me->id;
-            $params['type'] = $process->id;
-            $o = $engine->searchGroups($params);
-            $groups = $engine->getGroups($o->token, 0, $o->total);
-
-            if (!$task->id || !$instance_id || !count($groups)) return;
-
-            $candidate_groups = [];
-            foreach ($groups as $g) {
-                $candidate_groups[] = $g->id;
-            }
-
-            $assignee_group = $task->assignee;
-            if (in_array($assignee_group, $candidate_groups)) {
+            // 是否在 这些组里
+            if ($candidateGroup->hasMember($user->id)) {
                 return true;
             }
         } catch (\Gini\BPM\Exception $e) {
+            return ;
         }
-
         return;
     }
 
@@ -545,40 +538,50 @@ class Review extends \Gini\Controller\CGI
 
         foreach ($ids as $id) {
             try {
-                $task = $engine->task($id);
-                $rdata = $task->getVariables('data');
-                $data = (array)json_decode($rdata['value']);
-                $candidate_group = $engine->group($task->assignee);
+                $task       = $engine->task($id);
+                $instance   = $engine->processInstance($task->processInstanceId);
+
+                // 获取订单的数据 以及 task 的审批组
+                $rdata              = $task->getVariables('data');
+                $orderData          = (array)json_decode($rdata['value']);
+                $candidateGroup     = $engine->group($task->assignee);
+
+                // 操作远程 task 需要的参数
+                $data['task']           = $task;
+                $data['instance']       = $instance;
+                $data['engine']         = $engine;
+                $data['step']           = $this->_getCurrentStep($task->assignee);
+                $data['candidateGroup'] = $candidateGroup->name;
+                $data['message']        = $note;
+
+                // 操作本地订单记录 需要的参数
+                $updateData['message']            = $note;
+                $updateData['candidateGroup']     = $candidateGroup->name;
+                $updateData['orderData']          = $orderData;
+                $updateData['voucher']            = $orderData['voucher'];
+                $updateData['customized']         = $orderData['customized'];
+                $updateData['type']               = \Gini\ORM\Order::OPERATE_TYPE_APPROVE;
+
+                if ($key=='approve') {
+                    // 结束远程的 task 同时记录操作记录
+                    $data['opt'] = true;
+                    $bool = $this->_completeTask($data);
+                    if (!$bool) throw new \Gini\BPM\Exception();
+
+                    $updateData['opt']                = T('审核通过');
+                } else {
+                    // 结束远程的 task 同时记录操作记录
+                    $data['opt'] = false;
+                    $bool = $this->_completeTask($data);
+                    if (!$bool) throw new \Gini\BPM\Exception();
+
+                    $updateData['opt']                = T('审核拒绝');
+                }
+
+                // 更新本地订单的操作信息
+                $this->_doUpdate($updateData, $me);
             } catch (\Gini\BPM\Exception $e) {
                 continue;
-            }
-
-            if ($key=='approve') {
-                $db = \Gini\Database::db('mall-old');
-                $db->beginTransaction();
-                try {
-                    $params = [
-                        ':voucher' => $data['voucher'],
-                        ':date' => date('Y-m-d H:i:s'),
-                        ':operator' => $me->id,
-                        ':type' => \Gini\ORM\Order::OPERATE_TYPE_APPROVE,
-                        ':name' => $me->name,
-                        ':description' => $candidate_group->name.T('审批人'),
-                    ];
-
-                    $sql = "insert into order_operate_info (voucher,operate_date,operator_id,type,name,description) values (:voucher, :date, :operator, :type, :name, :description)";
-                    $query = $db->query($sql, null, $params);
-
-                    if (!$query) throw new \Exception();
-                    $bool = $this->_approve($engine, $task, $note);
-                    if (!$bool) throw new \Exception();
-                    $db->commit();
-                } catch (\Exception $e) {
-                    $bool = false;
-                    $db->rollback();
-                }
-            } else {
-                $bool = $this->_reject($engine, $task, $note);
             }
         }
 

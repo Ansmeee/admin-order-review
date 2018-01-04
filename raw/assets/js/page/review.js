@@ -16,19 +16,17 @@ define('page/review', ['jquery', 'utils/bootbox', 'board', 'utils/preview'], fun
         var action = $form.attr('action');
         $.post(action, $form.serialize(), function(response) {
             response = response || {};
-            var code = response.code;
-            var message = response.message;
-            var id = response.id;
-            if (code) {
+            if (response.code) {
                 Bootbox.alert(response.message);
                 return;
             }
-            var $oph = $(['[data-id=', id, ']'].join(''));
-            $oph.hide();
             $modal.modal('hide');
+            var $oph = $(['[data-id=', response.id, ']'].join(''));
+            $oph.hide();
             location.reload();
         });
     });
+
     $(document).on('click', '.app-q-search-handler', function() {
         var $form = $(this).parents('form');
         var q = $form.find('[name=q]').val();
