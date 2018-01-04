@@ -256,7 +256,7 @@ class Review extends \Gini\Controller\CGI
             $updateData['voucher']            = $orderData['voucher'];
             $updateData['customized']         = $orderData['customized'];
             $updateData['type']               = \Gini\ORM\Order::OPERATE_TYPE_APPROVE;
-            error_log(time());
+            
             if ($key=='approve') {
                 // 结束远程的 task 同时记录操作记录
                 $data['opt'] = true;
