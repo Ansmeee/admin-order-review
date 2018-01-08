@@ -10,85 +10,6 @@ namespace Gini\Controller\CGI\Rest;
 
 class Orders extends Base\Index
 {
-
-    /**
-        * @brief 获取设置权限信息
-        *
-        * @return
-     */
-    public function getSettingsOption()
-    {
-        $me = _G('ME');
-        $group = _G('GROUP');
-        if (!$me->id || !$group->id) {
-            $response = $this->response(401, T('无权访问'));
-            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
-        }
-
-        if ($me->isAllowedTo('管理权限')) {
-            $data['list'][] = [
-                "model"  => T("authority"),
-                "title"  => T("设置分组"),
-                "path"   => T("/order/review/authority")
-            ];
-        }
-
-        $appInfo = \Gini\Gapper\Client::getInfo();
-        $data['list'][] = [
-            "model"  => T("wxbind"),
-            "title"  => T("微信绑定"),
-            "url"    => T($appInfo['url']."/qr")
-        ];
-        $response = $this->response(200, T('获取成功'), $data);
-        return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
-    }
-
-    /**
-        * @brief 获取组信息
-        *
-        * @return
-     */
-    public function getGroups()
-    {
-        $me = _G('ME');
-        $group = _G('GROUP');
-        if (!$me->id || !$group->id) {
-            $response = $this->response(401, T('无权访问'));
-            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
-        }
-
-        try {
-            list($process, $engine) = $this->_getProcessEngine();
-            $params['member'] = $me->id;
-            $params['type'] = $process->id;
-            $o = $engine->searchGroups($params);
-            $groups = $engine->getGroups($o->token, 0, $o->total);
-
-            $data = [
-                "total" => count($groups),
-                "list"  => []
-            ];
-
-            if (!count($groups)) {
-                $response = $this->response(200, T('获取成功'), $data);
-                return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
-            }
-
-            foreach ($groups as $group) {
-                $data['list'][] = [
-                    "code"   =>  $group->id,
-                    "title"  =>  $group->name
-                ];
-            }
-
-            $response = $this->response(200, T('获取成功'), $data);
-            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
-        } catch (\Gini\BPM\Exception $e) {
-            $response = $this->response(400, T('获取失败'));
-            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
-        }
-    }
-
     /**
         * @brief 获待审核订单列表
         *
@@ -166,7 +87,7 @@ class Orders extends Base\Index
                 $vItem = (array)$vItem;
                 $item = [
                     "is_customized"     => $vItem['customized'] ? 1 : 0,
-                    "customized_reason" => ($vItem['customized'] && $vItem['reason']) ? $vItem['reason'] : T(),
+                    "customized_reason" => ($vItem['customized'] && $vItem['reason']) ? $vItem['reason'] : T(''),
                     "product_name"      => $vItem['name'].' * '.$vItem['quantity']
                 ];
                 // 获取货物标签
@@ -273,7 +194,7 @@ class Orders extends Base\Index
                 "id"           => $instance->id,
                 "ctime"        => $order->ctime ?: $order->request_date,
                 "voucher"      => $order->voucher,
-                "customer"     => $order->customer->name,
+                "customer"     => $order->group->title ?: $order->customer->name,
                 "vendor_name"  => $order->vendor_name ?: $order->vendor->name,
                 "price"        => money_format('%.2n', $order->price),
                 "status"       => $this->_getInstanceStatus($engine, $instance)
@@ -320,7 +241,10 @@ class Orders extends Base\Index
         // 验证参数
         $form = $this->form;
         $id = $form['id'];
-        if (!$form || !$id) {
+        $type = (int)$form['type'];
+        // type 定义：1 => pending-list , 2 => history-list
+        $types = [1, 2];
+        if (!$form || !$id || !in_array($type, $types)) {
             $response = $this->response(403, T('参数错误'));
             return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
         }
@@ -329,7 +253,13 @@ class Orders extends Base\Index
             $conf = \Gini\Config::get('app.order_review_process');
             $processName = $conf['name'];
             $engine = \Gini\BPM\Engine::of('order_review');
-            // 获取订单审批
+            if ($type === 1) {
+                // 获取订单审批
+                $task = $engine->task($id);
+                if (!$task->id) throw new \Gini\BPM\Exception();
+                $id = $task->processInstanceId;
+            }
+            // 获取订单信息
             $instance = $engine->processInstance($id);
             if (!$instance->id) {
                 $response = $this->response(403, T('参数错误'));
@@ -539,7 +469,6 @@ class Orders extends Base\Index
         $this->_addOrderInfoList($vendor, T("供应商"), $order->vendor_name ?: $order->vendor->name);
         $data['infos'][] = $vendor;
         // 买方信息
-        // 前端通过判断 type ，使用不同的渲染方式：2.订单列表进行渲染，1.其他的方式进行渲染
         $customer = [
             "type"   => 1,
             "title"  => T('买方信息')
@@ -563,14 +492,13 @@ class Orders extends Base\Index
         $this->_addOrderInfoList($delivery, T("电子邮箱"), $order->email);
         $data['infos'][] = $delivery;
         // 易制爆合法使用说明
-        $appInfo = \Gini\Gapper\Client::getInfo();
         $attach_id = ($type === 2) ? 'history-'.$instance->id : 'pending-'.$task->id;
         if (\Gini\Config::get('app.is_show_order_instruction') && is_array($order->instruction) && isset($order->instruction['path'])) {
             $attach_download = [
                 "type"   => 1,
                 "title"  => T('化学品合法使用说明')
             ];
-            $this->_addOrderInfoList($attach_download, T("使用说明附件"), T($appInfo['url'].'/review/attach-download/'.$attch_id.'/0/0/instruction'));
+            $this->_addOrderInfoList($attach_download, T("使用说明附件"), \Gini\Module\LabBase::getRedirectUrl('review/attach-download/'.$attch_id.'/0/0/instruction'));
             $data['infos'][] = $attach_download;
         }
         // 自购附件信息
@@ -609,14 +537,14 @@ class Orders extends Base\Index
                 foreach ((array)$vItem['license_images'] as $index => $license_image) {
                     $license_image_arr[] = [
                         "content" => $license_image->name,
-                        "url"     => T($appInfo['url'].'/review/attach-download/'.$attach_id.'/'.$i.'/'.$index.'/license')
+                        "url"     => \Gini\Module\LabBase::getRedirectUrl('review/attach-download/'.$attach_id.'/'.$i.'/'.$index.'/license')
                     ];
                 }
                 // 其他执照
                 foreach ((array)$vItem['extra_images'] as $index => $extra_image) {
                     $extra_image_arr[] = [
                         "content" => $license_image->name,
-                        "url"     => T($appInfo['url'].'/review/attach-download/'.$attach_id.'/'.$i.'/'.$index.'/extra')
+                        "url"     => \Gini\Module\LabBase::getRedirectUrl('/review/attach-download/'.$attach_id.'/'.$i.'/'.$index.'/extra')
                     ];
                 }
             }
@@ -670,10 +598,12 @@ class Orders extends Base\Index
             $content_item['url'] = $url;
         }
         // 循环查看是否有 title = $title 的数据，如果有则插入，没有则新建
-        foreach ($info['list'] as $i => $v) {
-            if ($v['title'] === $title) {
-                $index = $i;
-                break;
+        if ($info['list']) {
+            foreach ($info['list'] as $i => $v) {
+                if ($v['title'] === $title) {
+                    $index = $i;
+                    break;
+                }
             }
         }
         if ($index) {
@@ -790,7 +720,9 @@ class Orders extends Base\Index
                 // 获取当前审批进度
                 $step_arr = explode('-', $task->assignee);
                 $conf = \Gini\Config::get('app.order_review_process');
-                $steps = $conf['steps'];
+                foreach ($conf['steps'] as $code => $step) {
+                    $steps[] = $code;
+                }
                 foreach ($step_arr as $step) {
                     if (in_array($step, $steps)) {
                         $now_step = $step;
