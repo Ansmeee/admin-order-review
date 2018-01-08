@@ -252,7 +252,8 @@ class Tools extends \Gini\Controller\ClI
 
         $conf = \Gini\Config::get('app.order_review_process');
         $engine = \Gini\BPM\Engine::of('order_review');
-        $process = $engine->process($conf['name']);
+        $processName = $conf['name'];
+        $process = $engine->process($processName);
         while (true) {
             $instances = Those('sjtu/bpm/process/instance')
                 ->Whose('process')->is($his_process)
