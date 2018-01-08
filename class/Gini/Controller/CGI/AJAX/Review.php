@@ -28,7 +28,7 @@ class Review extends \Gini\Controller\CGI
     {
         $me = _G('ME');
         $group = _G('GROUP');
-        $limit = 25;
+        $limit = 20;
         $start = ($page - 1) * $limit;
         $instances = [];
         $objects = [];
@@ -37,39 +37,30 @@ class Review extends \Gini\Controller\CGI
         if (!$current_group) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
 
         try {
+            // 权限判断
             list($process, $engine) = $this->_getProcessEngine();
-            $tasks = [];
-            $candidateGroup = $engine->group($current_group);
-            $isMemberOfGroup = $candidateGroup->hasMember($me->id);
+            $candidateGroup         = $engine->group($current_group);
+            $isMemberOfGroup        = $candidateGroup->hasMember($me->id);
             if ($candidateGroup->type != $process->id) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
             if ($user->id && !$isMemberOfGroup) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
 
-            $sortBy = [
-                'startTime' => 'desc'
-            ];
-            $params['sortBy'] = $sortBy;
-            $params['candidateGroup'][] = $candidateGroup->id;
-            $params['history'] = true;
-
-            $result = $engine->searchTasks($params);
-            $tasks = $engine->getTasks($result->token, $start, $limit);
-            if (!count($tasks)) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
-
-            foreach ($tasks as $task) {
-                $instanceIds[] = $task->processInstanceId;
+            // 构造检索条件
+            $searchInstanceParams['sortBy']  = ['startTime' => 'desc'];
+            $searchInstanceParams['history'] = true;
+            $searchInstanceParams['process'] = $process->id;
+            if ($groupCode = $this->_getSearchGroup($current_group)) {
+                $searchInstanceParams['variables']['candidate_group'] = '='.$groupCode;
             }
 
-            $searchInstanceParams['sortBy'] = $sortBy;
-            $searchInstanceParams['history'] = true;
-            $searchInstanceParams['processInstance'] = $instanceIds;
-            $rdata = $engine->searchProcessInstances($searchInstanceParams);
-            $instances = $engine->getProcessInstances($rdata->token, 0, $rdata->total);
+            // 检索数据 处理数据
+            $rdata      = $engine->searchProcessInstances($searchInstanceParams);
+            $instances  = $engine->getProcessInstances($rdata->token, $start, $limit);
 
             foreach ($instances as $instance) {
-                $object = new \stdClass();
-                $object->instance = $instance;
-                $object->order = $this->_getOrderObject($instance,true);
-                $object->status = $this->_getInstanceStatus($engine, $instance);
+                $object             = new \stdClass();
+                $object->instance   = $instance;
+                $object->order      = $this->_getInstanceObject($instance);
+                $object->status     = $this->_getInstanceStatus($instance);
                 $objects[$instance->id] = $object;
             }
         } catch (\Gini\BPM\Exception $e){
@@ -77,30 +68,36 @@ class Review extends \Gini\Controller\CGI
         }
 
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-instances', [
-            'instances'=> $objects,
-            'type'=> $type,
-            'group'=> $candidateGroup->id,
-            'page'=> $page,
-            'total'=> ceil($result->total/$limit),
-            'vTxtTitles' => \Gini\Config::get('haz.types')
+            'instances'     => $objects,
+            'type'          => $type,
+            'group'         => $candidateGroup->id,
+            'page'          => $page,
+            'total'         => ceil($rdata->total/$limit),
+            'vTxtTitles'    => \Gini\Config::get('haz.types')
         ]));
     }
 
-    private function _getInstanceStatus($engine, $instance)
+    private function _getSearchGroup($group)
+    {
+        $conf       = \Gini\Config::get('app.order_review_process');
+        $steps      = array_keys($conf['steps']);
+        $groupArr   = explode('-', $group);
+        $groupCode  = end($groupArr);
+        if (!in_array($groupCode, $steps)) {
+            return $groupCode;
+        }
+        return false;
+    }
+
+    private function _getInstanceStatus($instance)
     {
         try {
             if ($instance->state === 'COMPLETED') {
                 return T('已结束');
             }
-
-            $params['processInstance'] = $instance->id;
-            $o = $engine->searchTasks($params);
-            $tasks = $engine->getTasks($o->token, 0, 1);
-            $task = current($tasks);
-            $group = $engine->group($task->assignee);
-
-            return T('等待 :group 审批', [':group' => $group->name]);
+            return T('待审批');
         } catch (\Gini\BPM\Exception $e) {
+            return T('待审批');
         }
     }
 
@@ -128,28 +125,29 @@ class Review extends \Gini\Controller\CGI
         $me = _G('ME');
         $limit = 20;
         $start = ($page - 1) * $limit;
-        list($process, $engine) = $this->_getProcessEngine();
-        $params['member'] = $me->id;
-        $params['type'] = $process->id;
-        $o = $engine->searchGroups($params);
-        $groups = $engine->getGroups($o->token, 0, $o->total);
-
-        if (!count($groups)) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
-
-        foreach ($groups as $group) {
-            $search_params['candidateGroup'][] = $group->id;
-        }
-        $search_params['includeAssignedTasks'] = true;
-        $sortBy = [
-            'created' => 'desc'
-        ];
-        $search_params['sortBy'] = $sortBy;
-        $rdata = $engine->searchTasks($search_params);
-        $tasks = $engine->getTasks($rdata->token, $start, $limit);
-
-        if (!count($tasks)) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
         $orders = [];
 
+        try {
+            // 构造搜索条件
+            list($process, $engine) = $this->_getProcessEngine();
+            $params['member']   = $me->id;
+            $params['type']     = $process->id;
+            $o      = $engine->searchGroups($params);
+            $groups = $engine->getGroups($o->token, 0, $o->total);
+
+            if (!count($groups)) throw new \Gini\BPM\Exception();
+
+            $search_params['candidateGroup']        = array_keys($groups);
+            $search_params['includeAssignedTasks']  = true;
+            $search_params['sortBy']                = ['created' => 'desc'];
+            $rdata = $engine->searchTasks($search_params);
+            $tasks = $engine->getTasks($rdata->token, $start, $limit);
+            if (!count($tasks)) throw new \Gini\BPM\Exception();
+        } catch (\Gini\BPM\Exception $e) {
+            return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
+        }
+
+        // 处理数据
         foreach ($tasks as $id => $task) {
             try {
                 $object = $this->_getTaskObject($task);
@@ -169,7 +167,7 @@ class Review extends \Gini\Controller\CGI
         ]));
     }
 
-    private function _getOrderObject($instance, $force=false)
+    private function _getInstanceObject($instance, $force = false)
     {
         $params['variableName'] = 'data';
         $rdata = $instance->getVariables($params);
@@ -177,13 +175,12 @@ class Review extends \Gini\Controller\CGI
 
         if ($force) {
             $order = a('order', ['voucher' => $data->voucher]);
+            if ($order->id) {
+                $data  = $order;
+            }
         }
 
-        if (!$order || !$order->id) {
-            $order = $data;
-        }
-
-        return $order;
+        return $data;
     }
 
     public function actionGetOPForm()
@@ -256,7 +253,7 @@ class Review extends \Gini\Controller\CGI
             $updateData['voucher']            = $orderData['voucher'];
             $updateData['customized']         = $orderData['customized'];
             $updateData['type']               = \Gini\ORM\Order::OPERATE_TYPE_APPROVE;
-            
+
             if ($key=='approve') {
                 // 结束远程的 task 同时记录操作记录
                 $data['opt'] = true;
@@ -362,12 +359,14 @@ class Review extends \Gini\Controller\CGI
         $instance   = $criteria['instance'];
         $engine     = $criteria['engine'];
         $step       = $criteria['step'];
+        $option     = $criteria['opt'] ? T('审批通过') : T('审批拒绝');
         try {
             // 记录 instance 的操作信息
             $comment = [
                 'message'   => $criteria['message'],
                 'group'     => $criteria['candidateGroup'],
                 'user'      => _G('ME')->name,
+                'option'    => $option,
                 'date'      => date('Y-m-d H:i:s')
             ];
             $res = $this->_addComment($engine, $instance, $comment);
@@ -431,7 +430,7 @@ class Review extends \Gini\Controller\CGI
 
         $instance = $engine->processInstance($id);
         if (!$instance || !$instance->id) return;
-        $order = $this->_getOrderObject($instance,true);
+        $order = $this->_getInstanceObject($instance, true);
         if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
             'order'=> $order,
@@ -455,8 +454,7 @@ class Review extends \Gini\Controller\CGI
             $engine = \Gini\BPM\Engine::of('order_review');
             $task = $engine->task($id);
             if (!$task->id) return;
-            $instance = $engine->processInstance($task->processInstanceId);
-            $order = $this->_getOrderObject($instance);
+            $order = $this->_getTaskObject($task);
             if (!$order->id) return;
         } catch (\Gini\BPM\Exception $e) {
         }

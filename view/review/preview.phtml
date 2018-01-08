@@ -10,9 +10,10 @@
     <?php foreach ($comments as $comment) { ?>
         <dd class="status-line-content-li">
             <div title="<?=H($comment->message)?>"><?=H($comment->message)?></div>
-            <div><?=H(T(':group:user:date', [
+            <div><?=H(T(':group:user:option:date', [
                 ':group'=> $comment->group ? $comment->group . ' ' : '',
                 ':user'=> $comment->user ? $comment->user. ' ' : '',
+                ':option' => $comment->option ? $comment->option. ' ' : '',
                 ':date'=> $comment->date? $comment->date. ' ' : ''
             ]))?></div>
         </dd>
@@ -21,4 +22,3 @@
 </div>
 <?php } ?>
 </div>
-

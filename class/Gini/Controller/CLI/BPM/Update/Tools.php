@@ -130,6 +130,49 @@ class Tools extends \Gini\Controller\ClI
         }
     }
 
+    public function actionPrepareUpdate()
+    {
+        $start = 0;
+        $limit = 100;
+
+        $node = \Gini\Config::get('app.node');
+        $processId = readline("process id : \n");
+        $process = a('sjtu/bpm/process', (int)$processId);
+        echo "node: $node \n";
+        echo "name: $process->name \n";
+
+        $con = readline("run or exit: (Y / N) ");
+        if ($con !== 'Y') {
+            return ;
+        }
+
+        $pID = $process->id;
+        $db = \Gini\DataBase::db();
+        while (true) {
+            $sql = "select `tag` from `sjtu_bpm_process_instance` where `process_id` = {$pID} limit ${start}, ${limit}";
+            $rows = @$db->query($sql)->rows();
+            if (!count($rows)) {
+                break;
+            }
+            $start += $limit;
+
+            foreach ($rows as $tag) {
+                $newTag = $node.'#'.$tag;
+                $selSql = "select `id` from `tagdb_tag` where name = {$newTag}";
+                if ($db->query($selSql)) {
+                    $delSql = "delete from `tagdb_tag` where `name` = {$newTag}";
+                    if ($db->query($delSql)) {
+                        echo $newTag."--done \n";
+                        continue;
+                    }
+                }
+                echo $newTag."--fail \n";
+            }
+        }
+
+        echo "DONE \n";
+    }
+
     public function actionUpdateInstances()
     {
         $start = 0;
@@ -169,7 +212,7 @@ class Tools extends \Gini\Controller\ClI
                 $info = (array)\Gini\TagDB\Client::of('rpc')->get($key);
                 $cacheData['candidate_group'] = $info['organization']['school_code'];
 
-                $steps = $conf['steps'];
+                $steps = array_keys($conf['steps']);
                 foreach ($steps as $step) {
                     if ($step == 'school') continue;
                     $cacheData[$step] = $step;
@@ -207,10 +250,9 @@ class Tools extends \Gini\Controller\ClI
             }
         }
 
-        $processName = 'history-order-review-process';
         $conf = \Gini\Config::get('app.order_review_process');
         $engine = \Gini\BPM\Engine::of('order_review');
-        $process = $engine->process($processName);
+        $process = $engine->process($conf['name']);
         while (true) {
             $instances = Those('sjtu/bpm/process/instance')
                 ->Whose('process')->is($his_process)
@@ -226,6 +268,11 @@ class Tools extends \Gini\Controller\ClI
                 $items = (array) json_decode($order_data['items']);
                 $order_data['items'] = $items;
                 $cacheData['data'] = $order_data;
+                $cacheData['voucher'] = $order_data['voucher'];
+
+                $key = "labmai-".$node."/".$order_data['group_id'];
+                $info = (array)\Gini\TagDB\Client::of('rpc')->get($key);
+                $cacheData['candidate_group'] = $info['organization']['school_code'];
 
                 $instanceID = $this->_getOrderInstanceID($processName, $order_data['voucher']);
                 if ($instanceID) continue;
@@ -246,16 +293,8 @@ class Tools extends \Gini\Controller\ClI
                     }
 
                     $comment[] = $com;
-                    if ($his_task->candidate_group->id) {
-                        $candidate_group_name = $his_task->candidate_group->name;
-                        if (array_key_exists($candidate_group_name, $history_groups)) {
-                            $candidate_group_name = $history_groups[$candidate_group_name];
-                        }
-                        $candidate_groups[] = $conf['name'].'-'.$candidate_group_name;
-                    }
                 }
 
-                $cacheData['candidate_groups'] = implode(',', $candidate_groups);
                 $cacheData['comment'] = $comment;
                 $cacheData['key'] = $processName;
                 try {
@@ -263,7 +302,7 @@ class Tools extends \Gini\Controller\ClI
                     if ($create_instance->id) {
                         $search_params['processInstance'] =  $create_instance->id;
                         $result = $engine->searchTasks($search_params);
-                        $tasks = $engine->getTasks($result->token, 0, $result->total);
+                        $tasks = $engine->getTasks($result->token, 0, 1);
                         $task = current($tasks);
                         if (!$task->complete()) {
                             echo $instance->id.'---'.$create_instance->id."---task---".$task->id."---x\n";
