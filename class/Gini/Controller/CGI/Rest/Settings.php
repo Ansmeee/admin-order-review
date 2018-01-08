@@ -28,7 +28,7 @@ class Settings extends Base\Index
             $data['list'][] = [
                 "model"  => T("authority"),
                 "title"  => T("设置分组"),
-                "path"   => T("/order/review/authority")
+                "path"   => T("review/authority")
             ];
         }
 
@@ -49,7 +49,7 @@ class Settings extends Base\Index
      */
     public function getGroups()
     {
-    $me = _G('ME');
+        $me = _G('ME');
         $group = _G('GROUP');
         if (!$me->id || !$group->id || !$me->isAllowedTo('管理权限')) {
             $response = $this->response(401, T('无权访问'));
@@ -90,7 +90,7 @@ class Settings extends Base\Index
      */
     public function getGroupMembers()
     {
-    $me = _G('ME');
+        $me = _G('ME');
         $group = _G('GROUP');
         if (!$me->id || !$group->id || !$me->isAllowedTo('管理权限')) {
             $response = $this->response(401, T('无权访问'));
@@ -140,7 +140,7 @@ class Settings extends Base\Index
      */
     public function getMembers()
     {
-    $me = _G('ME');
+        $me = _G('ME');
         $group = _G('GROUP');
         if (!$me->id || !$group->id || !$me->isAllowedTo('管理权限')) {
             $response = $this->response(401, T('无权访问'));
@@ -220,7 +220,7 @@ class Settings extends Base\Index
      */
     public function postAddGroupMember()
     {
-    $me = _G('ME');
+        $me = _G('ME');
         $group = _G('GROUP');
         if (!$group->id || !$me->id || !$me->isAllowedTo('管理权限')) {
             $response = $this->response(401, T('无权访问'));
@@ -305,7 +305,7 @@ class Settings extends Base\Index
      */
     public function postDeleteGroupMember()
     {
-    $me = _G('ME');
+        $me = _G('ME');
         $group = _G('GROUP');
         if (!$group->id || !$me->id || !$me->isAllowedTo('管理权限')) {
             $response = $this->response(401, T('无权访问'));
@@ -327,8 +327,8 @@ class Settings extends Base\Index
             if ($process_engine === false) throw new \Gini\BPM\Exception();
             list($process, $engine) =  $process_engine;
             // 验证用户参数
-            $ruser = $engine->user($userId);
-            if (!$ruser->id) {
+            $camunda_user = $engine->user($userId);
+            if (!$camunda_user->id) {
                 $response = $this->response(403, T('参数错误'));
                 return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
             }
@@ -340,7 +340,7 @@ class Settings extends Base\Index
             }
 
             // 添加成员
-            $bool = $rgroup->removeMember($ruser->id);
+            $bool = $rgroup->removeMember($camunda_user->id);
             if ($bool) {
                 $response = $this->response(200, T('操作成功'));
                 return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
@@ -361,7 +361,7 @@ class Settings extends Base\Index
      */
     public function getAddGroupList()
     {
-    $me = _G('ME');
+        $me = _G('ME');
         $group = _G('GROUP');
         if (!$group->id || !$me->id || !$me->isAllowedTo('管理权限')) {
             $response = $this->response(401, T('无权访问'));
@@ -382,17 +382,17 @@ class Settings extends Base\Index
         $rgroups = array_udiff($organizations, $groups, function ($a, $b) {
             $a = (array) $a;
             $b = (array) $b;
-        if ($a['id'] === $b['id']) {
-            return 0;
-        }
-        return ($a['id'] > $b['id']) ? 1 : -1;
-    });
+            if ($a['id'] === $b['id']) {
+                return 0;
+            }
+            return ($a['id'] > $b['id']) ? 1 : -1;
+        });
 
-    foreach ($rgroups as $key => $value) {
-    $data['list'][] = $value;
-    }
-    
-    $response = $this->response(200, T('获取成功'), $data);
+        foreach ($rgroups as $key => $value) {
+           $data['list'][] = $value;
+        }
+        
+        $response = $this->response(200, T('获取成功'), $data);
         return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
         
     }
@@ -404,7 +404,7 @@ class Settings extends Base\Index
      */
     public function postAddGroup()
     {
-    $me = _G('ME');
+        $me = _G('ME');
         $group = _G('GROUP');
         if (!$group->id || !$me->id || !$me->isAllowedTo('管理权限')) {
             $response = $this->response(401, T('无权访问'));
@@ -471,7 +471,7 @@ class Settings extends Base\Index
      */
     public function postDeleteGroup()
     {
-    $me = _G('ME');
+        $me = _G('ME');
         $group = _G('GROUP');
         if (!$group->id || !$me->id || !$me->isAllowedTo('管理权限')) {
             $response = $this->response(401, T('无权访问'));
@@ -531,10 +531,10 @@ class Settings extends Base\Index
     // 获取组织机构信息
     private function _getOrganization()
     {
-    // 获取 bpm 流程配置
-    $conf = \Gini\Config::get('app.order_review_process');
-    if ($conf) {
-    // 获取 bpm 审批机构信息
+        // 获取 bpm 流程配置
+        $conf = \Gini\Config::get('app.order_review_process');
+        if ($conf) {
+        // 获取 bpm 审批机构信息
             foreach ($conf['steps'] as $code => $step) {
             if ($code === 'school') continue;
                 $list[] = [
@@ -542,10 +542,10 @@ class Settings extends Base\Index
                     'name' => $step
                 ];
             }
-    }
+        }
 
-    // 获取组织机构信息
-    $cacher = \Gini\Cache::of('gateway');
+        // 获取组织机构信息
+        $cacher = \Gini\Cache::of('gateway');
         $key = 'schools';
         $organization = $cacher->get($key);
         if (!is_array($organization)) {
@@ -569,7 +569,7 @@ class Settings extends Base\Index
     // 获取组信息
     private function _getGroups()
     {
-    try {
+        try {
             // 获取所有分组
             $process_engine = $this->_getProcessEngine();
             if ($process_engine === false) return false;
