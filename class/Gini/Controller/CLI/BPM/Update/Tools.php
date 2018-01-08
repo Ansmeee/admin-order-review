@@ -157,7 +157,7 @@ class Tools extends \Gini\Controller\ClI
             $start += $limit;
 
             foreach ($rows as $tag) {
-                $newTag = $node.'#'.$tag;
+                $newTag = $node.'#'.$tag->tag;
                 $selSql = "select `id` from `tagdb_tag` where name = {$newTag}";
                 if ($db->query($selSql)) {
                     $delSql = "delete from `tagdb_tag` where `name` = {$newTag}";

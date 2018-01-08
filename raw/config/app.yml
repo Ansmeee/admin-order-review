@@ -15,4 +15,5 @@ rpc:
 
 is_show_order_purpose: ${ADMIN_ORDER_REVIEW_IS_SHOW_ORDER_PURPOSE}
 is_show_order_instruction: ${ADMIN_ORDER_REVIEW_IS_SHOW_ORDER_INSTRUCTION}
+update_history_instance_now: false
 ...

@@ -22,6 +22,11 @@ class Debade extends \Gini\Controller\API
 
     private function _getLabOrderNotified($message)
     {
+        // TODO 这段代码需要删除
+        if (\Gini\Config::get('app.update_history_instance_now') === true) {
+            return ;
+        }
+
         if (!isset($message['data']['voucher'])) return;
         $data = $message['data'];
         if ($data['status']!=\Gini\ORM\Order::STATUS_NEED_MANAGER_APPROVE) return;

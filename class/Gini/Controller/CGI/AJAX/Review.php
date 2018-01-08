@@ -56,6 +56,8 @@ class Review extends \Gini\Controller\CGI
             $rdata      = $engine->searchProcessInstances($searchInstanceParams);
             $instances  = $engine->getProcessInstances($rdata->token, $start, $limit);
 
+            if (!$rdata->total) throw new \Gini\BPM\Exception();
+
             foreach ($instances as $instance) {
                 $object             = new \stdClass();
                 $object->instance   = $instance;
