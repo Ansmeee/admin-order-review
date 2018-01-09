@@ -32,11 +32,10 @@ class Settings extends Base\Index
             ];
         }
 
-        $appInfo = \Gini\Gapper\Client::getInfo();
         $data['list'][] = [
             "model"  => T("wxbind"),
             "title"  => T("微信绑定"),
-            "url"    => T($appInfo['url']."/qr")
+            "url"    => T(\Gini\Module\LabBase::getRedirectUrl('qr'))
         ];
         $response = $this->response(200, T('获取成功'), $data);
         return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
@@ -117,11 +116,11 @@ class Settings extends Base\Index
 
             $members = $rgroup->getMembers();
             $data['total'] = count($members);
-            $data['list'] = [];
+            $data['list']  = [];
             foreach ($members as $member) {
                 $data['list'][] = [
-                'id'   => (int)$member->id,
-                'name' => $member->firstName
+                    'id'   => (int)$member->id,
+                    'name' => $member->firstName
                 ];
             }
 
@@ -261,14 +260,14 @@ class Settings extends Base\Index
                 }
                 
                 $camunda_user = $engine->user();
-                //密码暂时这样设置,得再想想
-                $params['id'] = $user->id;
+
+                $params['id']        = $user->id;
                 $params['firstName'] = $user->name;
-                $params['lastName'] = $user->name;
-                $params['email'] = $user->email;
-                $arr = explode('@', $user->email, 2);
-                $password = $arr[0].'_'.$user->id;
-                $params['password'] = $password;
+                $params['lastName']  = $user->name;
+                $params['email']     = $user->email;
+                $arr                 = explode('@', $user->email, 2);
+                $password            = $arr[0].'_'.$user->id;
+                $params['password']  = $password;
 
                 $bool = $camunda_user->create($params);
                 if (!$bool) {
@@ -441,8 +440,8 @@ class Settings extends Base\Index
         // 查看是否存在此组织机构
         foreach ($organizations as $organization) {
             if ($id === $organization['id']) {
-            $info = $organization;
-            break;
+                $info = $organization;
+                break;
             }
         }
 
@@ -558,8 +557,8 @@ class Settings extends Base\Index
 
         foreach ($organization as $key => $value) {
             $list[] = [
-            'id'    => $conf['name'].'-school-'.$value['code'],
-            'name'  => $value['name']
+                'id'    => $conf['name'].'-school-'.$value['code'],
+                'name'  => $value['name']
             ];
         }
 

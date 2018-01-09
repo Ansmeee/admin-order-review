@@ -282,9 +282,7 @@ class Review extends \Gini\Controller\CGI
     private function _getCurrentStep($assignee)
     {
         $conf = \Gini\Config::get('app.order_review_process');
-        foreach ($conf['steps'] as $code => $step) {
-            $steps[] = $code;
-        }
+        $steps = $conf['steps'];
         $step_arr = explode('-', $assignee);
         foreach ($step_arr as $step) {
             if (in_array($step, $steps)) {
