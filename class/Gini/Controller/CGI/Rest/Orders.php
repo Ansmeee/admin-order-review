@@ -79,6 +79,7 @@ class Orders extends Base\Index
 
             $info = [
                 "id"           => $task->id,
+                "instance_id"  => $task->processInstanceId,
                 "ctime"        => $order->ctime ?: $order->request_date,
                 "voucher"      => $order->voucher,
                 "customer"     => $order->customer->name,
@@ -254,10 +255,7 @@ class Orders extends Base\Index
         // 验证参数
         $form = $this->form;
         $id = $form['id'];
-        $type = (int)$form['type'];
-        // type 定义：1 => pending-list , 2 => history-list
-        $types = [1, 2];
-        if (!$form || !$id || !in_array($type, $types)) {
+        if (!$form || !$id) {
             $response = $this->response(403, T('参数错误'));
             return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
         }
@@ -266,12 +264,6 @@ class Orders extends Base\Index
             $conf = \Gini\Config::get('app.order_review_process');
             $processName = $conf['name'];
             $engine = \Gini\BPM\Engine::of('order_review');
-            if ($type === 1) {
-                // 获取订单审批
-                $task = $engine->task($id);
-                if (!$task->id) throw new \Gini\BPM\Exception();
-                $id = $task->processInstanceId;
-            }
             // 获取订单信息
             $instance = $engine->processInstance($id);
             if (!$instance->id) {
