@@ -242,14 +242,6 @@ class Tools extends \Gini\Controller\ClI
         $his_engine = \Gini\Process\Engine::of('default');
         $his_process = $his_engine->getProcess($his_process_name);
 
-        $history_groups = (array) \Gini\Config::get('bpm.history_groups');
-        if (!count($history_groups)) {
-            $confirm = readline("新的分组名称和旧的分组名称没有做映射配置, 是否继续 Y/N : \n");
-            if ($confirm !== 'Y') {
-                return ;
-            }
-        }
-
         $conf = \Gini\Config::get('app.order_review_process');
         $engine = \Gini\BPM\Engine::of('order_review');
         $processName = $conf['name'];
