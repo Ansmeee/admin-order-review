@@ -5,80 +5,6 @@ namespace Gini\Controller\CGI\Rest;
 
 class Order extends \Gini\Controller\Rest
 {
-    /**
-     * [postReview 为中爆提供审批订单的接口]
-     *
-     * @return [bool]
-     */
-    public function postReview()
-    {
-        // TODO 如何做请求的验证
-        $form   = $this->form('post');
-        $action = $form['action'];
-        $vouher = $form['voucher'];
-        $note   = $form['note'];
-
-        if (!in_array($action, ['approve', 'reject'])) {
-            $response = [
-                'code'  => 400,
-                'msg'   => T("Bad Request: action must be 'approve' or 'reject' !")
-            ];
-            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
-        }
-
-        if (!$voucher) {
-            $response = [
-                'code'  => 400,
-                'msg'   => T("Bad Request: voucher is not available !")
-            ];
-            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
-        }
-
-        list($process, $engine) = $this->_getProcessEngine();
-        try {
-
-            // 拿到这个 instance
-            $params['process']              = $process->id;
-            $params['history']              = true;
-            $params['variables']['voucher'] = '='.$vouher;
-
-            $rdata       = $engine->searchProcessInstances($params);
-            $instances   = $engine->getProcessInstances($rdata->token, 0, 1);
-            $instance = current($instances);
-            if (!$instance->id) throw new \Gini\BPM\Exception("Bad Request");
-
-            // 拿到 instance 对应的 task
-            $search_params['process']           = $process->id;
-            $search_params['processInstance']   = $instance->id;
-            $rdata      = $engine->searchTasks($search_params);
-            $tasks      = $engine->getTasks($rdata->token, 0, 1);
-            $task       = current($tasks);
-            if (!$task->id) throw new \Gini\BPM\Exception("Bad Request");
-
-            //需要对 task 的当前审批组做判断
-            $candidate_group = $engine->group($task->assignee);
-            if ($candidate_group != \Gini\Config::get('app.order_review_process')['3rd_approver']) {
-                throw new \Gini\BPM\Exception("Bad Request");
-            }
-        } catch (\Gini\BPM\Exception $e) {
-            $response = [
-                'code' => 500,
-                'msg'  => $e->getMessage()
-            ];
-            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
-        }
-
-        // 执行审批操作
-        $this->env['post'] = [
-            'id'    => $task->id,
-            'note'  => $note,
-            'key'   => $action
-        ];
-
-        $response = \Gini\CGI::request('ajax/review/post', $this->env)->execute();
-        return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
-    }
-
     public function postApprove()
     {
         $content = file_get_contents('php://input');
@@ -166,16 +92,5 @@ class Order extends \Gini\Controller\Rest
         }
 
         return self::$_RPCs[$type];
-    }
-
-    private function _getProcessEngine()
-    {
-        try {
-            $conf = \Gini\Config::get('app.order_review_process');
-            $engine = \Gini\BPM\Engine::of('order_review');
-            $process = $engine->process($conf['name']);
-        } catch (\Gini\BPM\Exception $e) {
-        }
-        return [$process, $engine];
     }
 }
