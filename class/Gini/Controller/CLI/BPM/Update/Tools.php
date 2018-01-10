@@ -158,9 +158,10 @@ class Tools extends \Gini\Controller\ClI
 
             foreach ($rows as $tag) {
                 $newTag = $node.'#'.$tag->tag;
-                $selSql = "select `id` from `tagdb_tag` where name = {$newTag}";
-                if ($db->query($selSql)) {
-                    $delSql = "delete from `tagdb_tag` where `name` = {$newTag}";
+                $selSql = "select `name` from `tagdb_tag` where name = '{$newTag}'";
+                $name = $db->query($selSql);
+                if ($name) {
+                    $delSql = "delete from `tagdb_tag` where `name` = '{$newTag}'";
                     if ($db->query($delSql)) {
                         echo $newTag."--done \n";
                         continue;
