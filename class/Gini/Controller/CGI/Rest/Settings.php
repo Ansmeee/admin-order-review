@@ -35,7 +35,7 @@ class Settings extends Base\Index
         $data['list'][] = [
             "model"  => T("wxbind"),
             "title"  => T("微信绑定"),
-            "url"    => T(\Gini\Module\LabBase::getRedirectUrl('qr'))
+            "url"    => T(\Gini\Module\AdminBase::getRedirectUrl('qr'))
         ];
         $response = $this->response(200, T('获取成功'), $data);
         return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);

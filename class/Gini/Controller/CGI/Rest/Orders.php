@@ -556,7 +556,7 @@ class Orders extends Base\Index
                 "type"   => 1,
                 "title"  => T('化学品合法使用说明')
             ];
-            $this->_addOrderInfoList($attach_download, T("使用说明附件"), \Gini\Module\LabBase::getRedirectUrl('review/attach-download/'.$attch_id.'/0/0/instruction'));
+            $this->_addOrderInfoList($attach_download, T("使用说明附件"), \Gini\Module\AdminBase::getRedirectUrl('review/attach-download/'.$attch_id.'/0/0/instruction'));
             $data['infos'][] = $attach_download;
         }
         // 自购附件信息
@@ -595,14 +595,14 @@ class Orders extends Base\Index
                 foreach ((array)$vItem['license_images'] as $index => $license_image) {
                     $license_image_arr[] = [
                         "content" => $license_image->name,
-                        "url"     => \Gini\Module\LabBase::getRedirectUrl('review/attach-download/'.$attach_id.'/'.$i.'/'.$index.'/license')
+                        "url"     => \Gini\Module\AdminBase::getRedirectUrl('review/attach-download/'.$attach_id.'/'.$i.'/'.$index.'/license')
                     ];
                 }
                 // 其他执照
                 foreach ((array)$vItem['extra_images'] as $index => $extra_image) {
                     $extra_image_arr[] = [
                         "content" => $license_image->name,
-                        "url"     => \Gini\Module\LabBase::getRedirectUrl('/review/attach-download/'.$attach_id.'/'.$i.'/'.$index.'/extra')
+                        "url"     => \Gini\Module\AdminBase::getRedirectUrl('/review/attach-download/'.$attach_id.'/'.$i.'/'.$index.'/extra')
                     ];
                 }
             }
