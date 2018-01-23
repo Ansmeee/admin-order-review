@@ -379,7 +379,6 @@ class Tools extends \Gini\Controller\ClI
         // 搜索条件
         list($process, $engine) = $this->_getProcessEngine();
         $searchInstanceParams['history'] = true;
-        $searchInstanceParams['active']  = false;
         $searchInstanceParams['process'] = $process->id;
 
         // 检索数据 处理数据
@@ -393,6 +392,7 @@ class Tools extends \Gini\Controller\ClI
             $start += $limit;
 
             foreach ($instances as $instance) {
+                if ($instance->state !== 'COMPLETED') continue;
                 $params['variableName'] = 'data';
                 $rdata = $instance->getVariables($params);
                 $data = json_decode(current($rdata)['value']);
