@@ -134,6 +134,19 @@ class Orders extends Base\Index
         $per_page = (int)$form['page_size'];
         if ($per_page < 1) $per_page = 10;
 
+        // 验证订单状态
+        $status = $form['status'] ? trim($form['status']) : '';
+        $validate_status = [
+            'active',       // 待审核
+            'approved',     // 已通过
+            'rejected'      // 已拒绝
+        ];
+
+        if ($status !== '' && !in_array($status, $validate_status)) {
+            $response = $this->response(403, T('参数错误'));
+            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+        }
+
         // 获取审批流程
         $process_engine = $this->_getProcessEngine();
         if ($process_engine === false) {
@@ -185,22 +198,15 @@ class Orders extends Base\Index
         if ($groupCode = $this->_getSearchGroup($group_id)) {
             $search_params['variables']['candidate_group'] = '='.$groupCode;
         }
+
+        if ($status !== '') {
+            $search_params['variables']['status'] = '='.$status;
+        }
+        
         // 获取订单信息
-        $result = $engine->searchTasks($search_params);
-        $tasks  = $engine->getTasks($result->token, $start*$per_page, $per_page);
+        $result        = $engine->searchProcessInstances($search_params);
+        $instances     = $engine->getProcessInstances($result->token, $start*$per_page, $per_page);
         $data['total'] = $result->total;
-        if (!$result->total || !count($tasks)) {
-            $response = $this->response(200, "获取成功", $data);
-            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
-        }
-
-        foreach ($tasks as $task) {
-            $instanceIds[] = $task->processInstanceId;
-        }
-
-        $search_params['processInstance'] = $instanceIds;
-        $rdata     = $engine->searchProcessInstances($search_params);
-        $instances = $engine->getProcessInstances($rdata->token, 0, $rdata->total);
 
         foreach ($instances as $instance) {
             $order = $this->_getOrderObject($instance, true);
@@ -715,14 +721,33 @@ class Orders extends Base\Index
 
     private function _getInstanceStatus($instance)
     {
-        try {
-            if ($instance->state === 'COMPLETED') {
-                return T('已结束');
+        try {         
+            $params['variableName'] = 'status';
+            $rdata = (array) $instance->getVariables($params);
+            $value = current($rdata)['value'];
+            switch ($value) {
+                case 'approved':
+                    $code = T('已通过');
+                    break;
+                case 'rejected':
+                    $code = T('已拒绝');
+                    break;
+                case 'active':
+                    $code = T('待审批');
+                    break;
+                default:
+                    $value = 'error';
+                    $code  = T('系统处理中'); 
             }
-            return T('待审批');
         } catch (\Gini\BPM\Exception $e) {
-            return T('待审批');
+            $value = 'error';
+            $code  = T('系统处理中'); 
         }
+
+        return [
+            'code' =>  $value,
+            'text' =>  $code
+        ];
     }
 
     private function _getTaskStatus($engine, $task)
