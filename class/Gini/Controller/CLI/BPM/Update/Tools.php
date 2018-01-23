@@ -337,11 +337,54 @@ class Tools extends \Gini\Controller\ClI
         echo "DONE \n";
     }
 
+    public function actionUpdateVariables()
+    {
+        $file = APP_PATH.'/'.DATA_DIR.'/instance.csv';
+        $myfile = fopen($file, 'r') or die("Unable to open file!");
+
+        $conf = (array) \Gini\Config::get('app.order_review_process');
+        foreach (array_keys($conf['steps']) as $step) {
+            $steps[] = $step.'_approved';
+        }
+        $engine = \Gini\BPM\Engine::of('order_review');
+        $db = \Gini\DataBase::db('camunda');
+        while ($instanceId = trim(fgets($myfile))) {
+            $instance = $engine->processInstance($instanceId);
+            if ($instance->state !== 'COMPLETED') continue;
+
+            $sql = "SELECT `NAME_` as name, `LONG_` as 'long' FROM `ACT_HI_VARINST` WHERE `PROC_INST_ID_`= '{$instanceId}'";
+            $rows = @$db->query($sql)->rows();
+            if (count($rows)) {
+                foreach ($rows as $row) {
+                     // 判断 status 的状态
+                     if (in_array($row->name, $steps)) {
+                         $opts[$row->name] = $row->long;
+                     }
+                }
+
+                $status = 'approved';
+                // 如果有一个是拒绝的，那就是 rejected
+                if (in_array(0, $opts)) {
+                    $status = 'rejected';
+                }
+
+                $updateSql = "UPDATE `ACT_HI_VARINST` SET `TEXT_` = '{$status}' WHERE `PROC_INST_ID_`= '{$instanceId}' AND `NAME_` = 'status'";
+                $query = $db->query($updateSql);
+                if ($query) {
+                     echo $instanceId."--done \n";
+                     continue;
+                }
+                echo $instanceId."--file \n";
+            }
+        }
+    }
+
     public function actionUpdateInstanceVariables()
     {
         $start = 0;
         $limit = 100;
 
+        $file = APP_PATH.'/'.DATA_DIR.'/instance.csv';
         // 搜索条件
         list($process, $engine) = $this->_getProcessEngine();
         $searchInstanceParams['active']  = true;
@@ -357,6 +400,7 @@ class Tools extends \Gini\Controller\ClI
             $start += $limit;
 
             foreach ($instances as $instance) {
+                file_put_contents($file, $instance->id."\n", FILE_APPEND);
                 $params['variableName'] = 'data';
                 $rdata = $instance->getVariables($params);
                 $data = json_decode(current($rdata)['value']);
@@ -370,6 +414,7 @@ class Tools extends \Gini\Controller\ClI
         }
         echo "DONE \n";
     }
+
 
     public function actionUpdateFinishedInstanceVariables()
     {
