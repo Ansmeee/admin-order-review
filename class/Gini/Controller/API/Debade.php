@@ -49,6 +49,7 @@ class Debade extends \Gini\Controller\API
         $types = [];
         $items = (array)$message['data']['items'];
         foreach ($items as $item) {
+            $products .= $item['name'].' ';
             $casNO = $item['cas_no'];
             $chem_types = (array) \Gini\ChemDB\Client::getTypes($casNO)[$casNO];
             $types = array_unique(array_merge($types, $chem_types));
@@ -68,9 +69,16 @@ class Debade extends \Gini\Controller\API
             if ($step == 'school') continue;
             $cacheData[$step] = $processName.'-'.$step;
         }
-        $cacheData['data'] = $message['data'];
-        $cacheData['key'] = $processName;
-        $cacheData['voucher'] = $data['voucher'];
+        $cacheData['data']          = $message['data'];
+        $cacheData['key']           = $processName;
+        $cacheData['voucher']       = $data['voucher'];
+        $cacheData['request_date']  = $data['request_date'];
+        $cacheData['customer']      = $data['customer']['name'];
+        $cacheData['requester']     = $data['requester_name'];
+        $cacheData['vendor']        = $data['vendor_name'];
+        $cacheData['products']      = $products;
+        $cacheData['types']         = implode(' ', $types);
+        $cacheData['status']        = 'active';
 
         $instanceID = $this->_getOrderInstanceID($processName, $data['voucher']);
         if ($instanceID) {
@@ -84,7 +92,15 @@ class Debade extends \Gini\Controller\API
 
         if ($instance->id && $instance->id!=$instanceID) {
             $this->_setOrderInstanceID($processName, $data['voucher'], $instance->id);
+            // 记录这个 instance 的 ID
+            $params = [
+                'variableName'  => 'instance',
+                'type'          => 'string',
+                'value'         => $instance->id
+            ];
+            $instance->setVariable($params);
         }
+
     }
 
     // 获取院系类别

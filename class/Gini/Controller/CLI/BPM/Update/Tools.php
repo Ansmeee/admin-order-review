@@ -255,14 +255,30 @@ class Tools extends \Gini\Controller\ClI
             $start += $perpage;
             if (!count($instances)) return;
             foreach ($instances as $instance) {
+                $types = [];
                 $comment = [];
                 $cacheData = [];
                 $candidate_groups = [];
                 $order_data = $instance->data['data'];
-                $items = (array) json_decode($order_data['items']);
-                $order_data['items'] = $items;
-                $cacheData['data'] = $order_data;
-                $cacheData['voucher'] = $order_data['voucher'];
+                $items =  json_decode($order_data['items']);
+
+                foreach ($items as $item) {
+                    $products .= $item->name.' ';
+                    $casNO = $item->cas_no;
+                    $chem_types = (array) \Gini\ChemDB\Client::getTypes($casNO)[$casNO];
+                    $types = array_unique(array_merge($types, $chem_types));
+                }
+
+                $order_data['items']        = $items;
+
+                $cacheData['data']          = $order_data;
+                $cacheData['voucher']       = $order_data['voucher'];
+                $cacheData['request_date']  = $order_data['request_date'];
+                $cacheData['customer']      = $order_data['customer']['name'];
+                $cacheData['requester']     = $order_data['requester_name'];
+                $cacheData['vendor']        = $order_data['vendor_name'];
+                $cacheData['products']      = $products;
+                $cacheData['types']         = implode(' ', $types);
 
                 $key = "labmai-".$node."/".$order_data['group_id'];
                 $info = (array)\Gini\TagDB\Client::of('rpc')->get($key);
@@ -275,7 +291,11 @@ class Tools extends \Gini\Controller\ClI
                     ->Whose('instance')->is($instance)
                     ->orderBy('ctime', 'desc');
 
+                $status = 'approved';
                 foreach ($his_tasks as $his_task) {
+                    if ($his_task->status == \Gini\ORM\SJTU\BPM\Process\Task::STATUS_UNAPPROVED) {
+                        $status = 'rejected';
+                    }
                     $com = [];
                     if ($his_task->user) {
                         $com = [
@@ -289,8 +309,10 @@ class Tools extends \Gini\Controller\ClI
                     $comment[] = $com;
                 }
 
+                $cacheData['status'] = $status;
                 $cacheData['comment'] = $comment;
                 $cacheData['key'] = $processName;
+
                 try {
                     $create_instance = $process->start($cacheData);
                     if ($create_instance->id) {
@@ -309,7 +331,299 @@ class Tools extends \Gini\Controller\ClI
                    echo $instance->id."---x\n";
                 }
             }
+
         }
+
+        echo "DONE \n";
+    }
+
+    public function actionUpdateInstanceVariables()
+    {
+        $start = 0;
+        $limit = 100;
+
+        // 搜索条件
+        list($process, $engine) = $this->_getProcessEngine();
+        $searchInstanceParams['active']  = true;
+        $searchInstanceParams['process'] = $process->id;
+        // 检索数据 处理数据
+        $rdata      = $engine->searchProcessInstances($searchInstanceParams);
+        while (true) {
+            $instances  = $engine->getProcessInstances($rdata->token, $start, $limit);
+            if (!count($instances)) {
+                break;
+            }
+
+            $start += $limit;
+
+            foreach ($instances as $instance) {
+                $params['variableName'] = 'data';
+                $rdata = $instance->getVariables($params);
+                $data = json_decode(current($rdata)['value']);
+                $bool = $this->_setVariable($engine, $instance, $data);
+                if ($bool) {
+                    echo $instance->id."--done \n";
+                    continue;
+                }
+                echo $instance->id."--fail \n";
+            }
+        }
+        echo "DONE \n";
+    }
+
+    public function actionUpdateFinishedInstanceVariables()
+    {
+        $start = 0;
+        $limit = 100;
+
+        // 搜索条件
+        list($process, $engine) = $this->_getProcessEngine();
+        $searchInstanceParams['history'] = true;
+        $searchInstanceParams['active']  = false;
+        $searchInstanceParams['process'] = $process->id;
+
+        // 检索数据 处理数据
+        $rdata      = $engine->searchProcessInstances($searchInstanceParams);
+        while (true) {
+            $instances  = $engine->getProcessInstances($rdata->token, $start, $limit);
+            if (!count($instances)) {
+                break;
+            }
+
+            $start += $limit;
+
+            foreach ($instances as $instance) {
+                $params['variableName'] = 'data';
+                $rdata = $instance->getVariables($params);
+                $data = json_decode(current($rdata)['value']);
+
+                $result = $this->_doIt($engine, $instance, $data);
+
+                if (is_array($result) && count($result)) {
+                    foreach ($result as $name) {
+                        echo $instance->id.'--'.$name.'--failed';
+                        echo "\n";
+                    }
+                    continue;
+                } else if($result) {
+                    echo $instance->id."--done \n";
+                    continue;
+                }
+
+                echo $instance->id."--fail \n";
+            }
+        }
+        echo "DONE \n";
+    }
+
+    public function actionOne()
+    {
+        $Id = readline("instance Id: \n");
+        list($process, $engine) = $this->_getProcessEngine();
+        $instance = $engine->processInstance($Id);
+        if (!$instance->id) {
+            echo "error \n";
+            return ;
+        }
+
+        $params['variableName'] = 'data';
+        $rdata = $instance->getVariables($params);
+        $data = json_decode(current($rdata)['value']);
+        $bool = $this->_doIt($engine, $instance, $data);
+        var_dump($bool);
+    }
+
+    private function _doIt($engine, $instance, $data = [])
+    {
+        $ids = [];
+        $opts = [];
+        $variables = $this->_getVariables($data);
+        $status = 'approved';
+
+        $conf = (array) \Gini\Config::get('app.order_review_process');
+        foreach (array_keys($conf['steps']) as $step) {
+            $steps[] = $step.'_approved';
+        }
+
+        $db = \Gini\Database::db('camunda');
+
+        $sql = "SELECT `ID_` as id, `PROC_DEF_KEY_` as def_key, `PROC_DEF_ID_` as def_id,
+         `EXECUTION_ID_` as execution_id, `ACT_INST_ID_` as act_inst_id, `NAME_` as name,
+         `LONG_` as 'long'
+         FROM `ACT_HI_VARINST` WHERE `PROC_INST_ID_`= '{$instance->id}'";
+
+        $rows = @$db->query($sql)->rows();
+        if (count($rows)) {
+            foreach ($rows as $row) {
+                $ids[] = $row->id;
+
+                // 拿到不变的量
+                $def_key = $row->def_key;
+                $def_id  = $row->def_id;
+                $inst_id = $instance->id;
+                $execution_id = $row->execution_id;
+                $act_inst_id  = $row->act_inst_id;
+
+                // 判断 status 的状态
+                if (in_array($row->name, $steps)) {
+                    $opts[$row->name] = $row->long;
+                }
+            }
+
+            // 如果有一个是拒绝的，那就是 rejected
+            if (in_array(0, $opts)) {
+                $status = 'rejected';
+            }
+
+            foreach ($variables as $name => $variable) {
+                // 自己造一个 id 必须和原来的 id 不同
+
+                $cid = current($ids);
+                $cidArr = explode('-', $cid);
+                $newCidArr = $cidArr;
+                while (true) {
+                    $newPriId = rand(10000000, 99999999);
+                    $newCidArr[0] = $newPriId;
+                    $nId = implode('-', $newCidArr);
+                    if (!in_array($nId, $ids)) {
+                        $ids[] = $nId;
+                        break ;
+                    }
+                }
+
+                $type = $variable['type'];
+                if ($name == 'status') {
+		    $value = $status;
+                } else {
+                    $value = $variable['value'];
+                }
+                $sql = "INSERT INTO `ACT_HI_VARINST`
+                (`ID_`, `PROC_DEF_KEY_`, `PROC_DEF_ID_`, `PROC_INST_ID_`, `EXECUTION_ID_`,
+                `ACT_INST_ID_`, `NAME_`, `VAR_TYPE_`, `REV_`, `TEXT_`)
+                VALUES
+                ('$nId', '$def_key', '$def_id', '$inst_id', '$execution_id', '$act_inst_id', '$name', '$type', 0, '$value')";
+                $query = $db->query($sql);
+                if (!$query) {
+                    $failed[] = $name;
+                }
+            }
+        }
+
+        if (count($failed)) {
+            return $failed;
+        }
+
+        return true;
+    }
+
+    public function actionTestOne()
+    {
+        $Id = readline("instance Id: \n");
+        list($process, $engine) = $this->_getProcessEngine();
+        $instance = $engine->processInstance($Id);
+        if (!$instance->id) {
+            echo "error \n";
+            return ;
+        }
+
+        $params['variableName'] = 'data';
+        $rdata = $instance->getVariables($params);
+        $data = json_decode(current($rdata)['value']);
+        $bool = $this->_setVariable($engine, $instance, $data);
+        echo $bool."\n";
+    }
+
+    private function _getVariables($data)
+    {
+        // 订单编号
+        $variables['voucher'] = [
+            'variableName'  => 'voucher',
+            'type'          => 'string',
+            'value'         => $data->voucher ?: ''
+        ];
+
+        // 状态
+        $variables['status'] = [
+            'variableName'  => 'status',
+            'type'          => 'string',
+            'value'         => 'active'
+        ];
+
+        // 下单时间
+        $variables['request_date'] = [
+            'variableName'  => 'request_date',
+            'type'          => 'string',
+            'value'         => $data->request_date ?: ''
+        ];
+
+        // 买方
+        $variables['customer'] = [
+            'variableName'  => 'customer',
+            'type'          => 'string',
+            'value'         => $data->customer->name ?: ''
+        ];
+
+        // 下单人
+        $variables['requester'] = [
+            'variableName'  => 'requester',
+            'type'          => 'string',
+            'value'         => $data->requester_name ?: ''
+        ];
+
+        // 商品
+        $items = $data->items;
+        $types = [];
+        foreach ($items as $item) {
+            $products .= $item->name.' ';
+            $casNO = $item->cas_no;
+            $chem_types = (array) \Gini\ChemDB\Client::getTypes($casNO)[$casNO];
+            $types = array_unique(array_merge($types, $chem_types));
+        }
+        $variables['products'] = [
+            'variableName'  => 'products',
+            'type'          => 'string',
+            'value'         => trim($products) ?: ''
+        ];
+
+        $variables['types'] = [
+            'variableName'  => 'types',
+            'type'          => 'string',
+            'value'         => count($types) ? implode(' ', $types) : ''
+        ];
+
+        $variables['vendor'] = [
+            'variableName'  => 'vendor',
+            'type'          => 'string',
+            'value'         => $data->vendor_name ?: ''
+        ];
+
+        return $variables;
+    }
+
+    private function _setVariable($engine, $instance, $data = [])
+    {
+
+        $variables = $this->_getVariables($data);
+        foreach ($variables as $name => $variable) {
+            try {
+                $bool = $instance->setVariable($variable);
+            } catch (\Gini\BPM\Exception $e) {
+                continue;
+            }
+        }
+
+        return $bool ?: false;
+    }
+
+    private function _getProcessEngine()
+    {
+        try {
+            $conf = \Gini\Config::get('app.order_review_process');
+            $engine = \Gini\BPM\Engine::of('order_review');
+            $process = $engine->process($conf['name']);
+        } catch (\Gini\BPM\Exception $e) {
+        }
+        return [$process, $engine];
     }
 
     private function _getOrderInstanceID($processName, $voucher)

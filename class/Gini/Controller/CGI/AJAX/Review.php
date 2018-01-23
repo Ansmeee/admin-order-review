@@ -93,14 +93,27 @@ class Review extends \Gini\Controller\CGI
 
     private function _getInstanceStatus($instance)
     {
+
         try {
-            if ($instance->state === 'COMPLETED') {
-                return T('已结束');
+            $params['variableName'] = 'status';
+            $rdata = (array) $instance->getVariables($params);
+            $value = current($rdata)['value'];
+            switch ($value) {
+                case 'active':
+                    $status = T('待审批');
+                    break;
+                case 'approved':
+                    $status = T('已通过');
+                    break;
+                case 'rejected':
+                    $status = T('已拒绝');
+                    break;
             }
-            return T('待审批');
         } catch (\Gini\BPM\Exception $e) {
-            return T('待审批');
+            return T('系统处理中');
         }
+
+        return $status ?: T('系统处理中');
     }
 
     private function _getTaskStatus($engine, $task)
