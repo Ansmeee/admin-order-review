@@ -66,11 +66,16 @@ class Index extends Layout\Board{
         try {
             $conf = \Gini\Config::get('app.order_review_process');
             $processName = $conf['name'];
+            $thirdApprover = $processName.'-'.$conf['3rd']['approver'];
             $engine = \Gini\BPM\Engine::of('order_review');
             $o = $engine->searchGroups(['type' => $processName]);
             $groups = $engine->getGroups($o->token, 0, $o->total);
         } catch (\Gini\BPM\Exception $e) {
             $groups = [];
+        }
+        // 如果有第三方审批组，则不需要显示在我们的系统里
+        if ($thirdApprover) {
+             unset($groups[$thirdApprover]);
         }
 
         $vars = [

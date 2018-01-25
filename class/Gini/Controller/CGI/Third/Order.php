@@ -61,8 +61,8 @@ class Order extends \Gini\Controller\Rest
         $form     = $this->form('post');
         $action   = $form['action'];
         $voucher  = $form['voucher'];
-        $userId   = $form['user_id'];
-        $userName = $form['user_name'];
+        $license  = $form['license'];
+        $userName = $form['username'];
         $note     = $form['note'];
         $client_id      = $form['client_id'];
         $client_secret  = $form['client_secret'];
@@ -86,10 +86,18 @@ class Order extends \Gini\Controller\Rest
             return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
         }
 
-        if (!$userId || !$userName) {
+        if (!$userName) {
             $response = [
                 'code'  => 400,
                 'msg'   => T("Bad Request: user is not available !")
+            ];
+            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+        }
+
+        if (!count($license)) {
+            $response = [
+                'code'  => 400,
+                'msg'   => T("Bad Request: license is not available !")
             ];
             return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
         }
@@ -148,7 +156,6 @@ class Order extends \Gini\Controller\Rest
             $data['userName']       = $userName;
 
             // 操作本地订单记录 需要的参数
-            $updateData['userId']             = $userId;
             $updateData['userName']           = $userName;
             $updateData['message']            = $note;
             $updateData['candidateGroup']     = $candidateGroup->name;
@@ -247,7 +254,6 @@ class Order extends \Gini\Controller\Rest
                         ':opt'      => $data['opt']
                     ]),
                     't' => $now,
-                    'u' => $data['userId'],
                     'd' => $data['message'],
                 ]
             ]);
@@ -257,7 +263,6 @@ class Order extends \Gini\Controller\Rest
                 $params = [
                     ':voucher'      => $data['voucher'],
                     ':date'         => date('Y-m-d H:i:s'),
-                    ':operator'     => $data['userId'],
                     ':type'         => $data['type'],
                     ':name'         => $data['userName'],
                     ':description'  => $data['candidateGroup'].T('审批人'),
