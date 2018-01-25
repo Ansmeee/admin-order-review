@@ -69,6 +69,11 @@ class Debade extends \Gini\Controller\API
             if ($step == 'school') continue;
             $cacheData[$step] = $processName.'-'.$step;
         }
+
+        // 带上 client 做权限判断
+        $client['id']       = \Gini\Config::get('gapper.rpc')['client_id'];
+        $client['secret']   = \Gini\Config::get('gapper.rpc')['client_secret'];
+
         $cacheData['data']          = $message['data'];
         $cacheData['key']           = $processName;
         $cacheData['voucher']       = $data['voucher'];
@@ -79,6 +84,7 @@ class Debade extends \Gini\Controller\API
         $cacheData['products']      = $products;
         $cacheData['types']         = implode(' ', $types);
         $cacheData['status']        = 'active';
+        $cacheData['client']        = $client;
 
         $instanceID = $this->_getOrderInstanceID($processName, $data['voucher']);
         if ($instanceID) {

@@ -4,6 +4,53 @@ namespace Gini\Controller\CGI\Third;
 
 class Order extends \Gini\Controller\Rest
 {
+    public function postTest()
+    {
+        $form = $this->form('post');
+        error_log(J($form));
+    }
+
+    // 用于 将需要审批的订单数据推送至 中爆
+    public function postToZB()
+    {
+        $content    = file_get_contents('php://input');
+        $rdata      = explode('&', $content);
+        $client     = json_decode($rdata[0]);
+        $order_data = json_decode($rdata[1]);
+
+        // 权限验证
+        $clientId       = \Gini\Config::get('gapper.rpc')['client_id'];
+        $clientSecret   = \Gini\Config::get('gapper.rpc')['client_secret'];
+        if ($clientId != $client->id || $clientSecret != $client->secret) {
+            return false;
+        }
+
+        $tmpItems = $order_data->items;
+        $items = [];
+        foreach ($tmpItems as $item) {
+            $items[] = [
+                'qrcode'       => '',
+                'product_id'   => $item->id,
+                'manufacturer' => $item->manufacturer,
+                'catalog_no'   => $item->catalog_no,
+                'package'      => $item->package
+            ];
+        }
+        // 推送至 中爆 的数据
+        $data = [
+            'voucher'     =>  $order_data->voucher,
+            'date'        =>  $order_data->request_date,
+            'price'       =>  $order_data->price,
+            'vendor_code' =>  $order_data->vendor_code,
+            'items'       =>  $items
+        ];
+
+        $api = \Gini\Config::get('app.order_review_process')['3rd']['api'];
+        $http = new \Gini\HTTP();
+        $http->header('Content-Type', 'application/json')->post($api, $data);
+
+    }
+
     /**
      * [postReview 为中爆提供审批订单的接口]
      *

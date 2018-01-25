@@ -16,4 +16,15 @@ rpc:
 is_show_order_purpose: ${ADMIN_ORDER_REVIEW_IS_SHOW_ORDER_PURPOSE}
 is_show_order_instruction: ${ADMIN_ORDER_REVIEW_IS_SHOW_ORDER_INSTRUCTION}
 update_history_instance_now: false
+order_review_process:
+  name: ${ORDER_REVIEW_PROCESS_NAME}
+  steps:
+    school: 学院
+  option: ${ORDER_REVIEW_OPTION}
+  3rd:
+    api: ${ORDER_REVIEW_THIRD_API}
+    approver: ${ORDER_REVIEW_THIRD_APPROVER}
+    client:
+      id: ${ORDER_REVIEW_THIRD_CLIENT_ID}
+      secret: ${ORDER_REVIEW_THIRD_CLIENT_SECRET}
 ...
