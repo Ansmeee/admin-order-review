@@ -360,9 +360,9 @@ class Tools extends \Gini\Controller\ClI
         $searchInstanceParams['active']  = true;
         $searchInstanceParams['process'] = $process->id;
         // 检索数据 处理数据
-        $rdata      = $engine->searchProcessInstances($searchInstanceParams);
+        $rdatas      = $engine->searchProcessInstances($searchInstanceParams);
         while (true) {
-            $instances  = $engine->getProcessInstances($rdata->token, $start, $limit);
+            $instances  = $engine->getProcessInstances($rdatas->token, $start, $limit);
             if (!count($instances)) {
                 break;
             }
