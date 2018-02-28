@@ -255,47 +255,17 @@ class Tools extends \Gini\Controller\ClI
             $start += $perpage;
             if (!count($instances)) return;
             foreach ($instances as $instance) {
-                $types = [];
                 $comment = [];
                 $cacheData = [];
                 $candidate_groups = [];
                 $order_data = $instance->data['data'];
-                $items =  json_decode($order_data['items']);
-
-                foreach ($items as $item) {
-                    $products .= $item->name.' ';
-                    $casNO = $item->cas_no;
-                    $chem_types = (array) \Gini\ChemDB\Client::getTypes($casNO)[$casNO];
-                    $types = array_unique(array_merge($types, $chem_types));
-                }
-
-                $order_data['items']        = $items;
-
-                $cacheData['data']          = $order_data;
-                $cacheData['voucher']       = $order_data['voucher'];
-                $cacheData['request_date']  = $order_data['request_date'];
-                $cacheData['customer']      = $order_data['customer']['name'];
-                $cacheData['requester']     = $order_data['requester_name'];
-                $cacheData['vendor']        = $order_data['vendor_name'];
-                $cacheData['products']      = $products;
-                $cacheData['types']         = implode(' ', $types);
-
-                $key = "labmai-".$node."/".$order_data['group_id'];
-                $info = (array)\Gini\TagDB\Client::of('rpc')->get($key);
-                $cacheData['candidate_group'] = $info['organization']['school_code'];
-
-                $instanceID = $this->_getOrderInstanceID($processName, $order_data['voucher']);
-                if ($instanceID) continue;
-
+                $items = (array) json_decode($order_data['items']);
+                $order_data['items'] = $items;
+                $cacheData['data'] = $order_data;
                 $his_tasks = Those('sjtu/bpm/process/task')
                     ->Whose('instance')->is($instance)
                     ->orderBy('ctime', 'desc');
-
-                $status = 'approved';
                 foreach ($his_tasks as $his_task) {
-                    if ($his_task->status == \Gini\ORM\SJTU\BPM\Process\Task::STATUS_UNAPPROVED) {
-                        $status = 'rejected';
-                    }
                     $com = [];
                     if ($his_task->user) {
                         $com = [
@@ -307,31 +277,31 @@ class Tools extends \Gini\Controller\ClI
                     }
 
                     $comment[] = $com;
+                    if ($his_task->candidate_group->id) {
+                        $candidate_groups[] = $conf['name'].'-'.$his_task->candidate_group->name;
+                    }
                 }
 
-                $cacheData['status'] = $status;
+                $cacheData['candidate_groups'] = implode(',', $candidate_groups);
                 $cacheData['comment'] = $comment;
                 $cacheData['key'] = $processName;
-
                 try {
                     $create_instance = $process->start($cacheData);
                     if ($create_instance->id) {
                         $search_params['processInstance'] =  $create_instance->id;
                         $result = $engine->searchTasks($search_params);
-                        $tasks = $engine->getTasks($result->token, 0, 1);
+                        $tasks = $engine->getTasks($result->token, 0, $result->total);
                         $task = current($tasks);
                         if (!$task->complete()) {
                             echo $instance->id.'---'.$create_instance->id."---task---".$task->id."---x\n";
                             continue;
                         }
-                        $this->_setOrderInstanceID($processName, $order_data['voucher'], $create_instance->id);
                         echo $instance->id.'---'.$create_instance->id."---o\n";
                     }
                 } catch (\Gini\BPM\Exception $e) {
                    echo $instance->id."---x\n";
                 }
             }
-
         }
 
         echo "DONE \n";
@@ -427,9 +397,9 @@ class Tools extends \Gini\Controller\ClI
         $searchInstanceParams['process'] = $process->id;
 
         // 检索数据 处理数据
-        $rdata      = $engine->searchProcessInstances($searchInstanceParams);
+        $rdatas     = $engine->searchProcessInstances($searchInstanceParams);
         while (true) {
-            $instances  = $engine->getProcessInstances($rdata->token, $start, $limit);
+            $instances  = $engine->getProcessInstances($rdatas->token, $start, $limit);
             if (!count($instances)) {
                 break;
             }
