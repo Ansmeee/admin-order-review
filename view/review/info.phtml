@@ -85,7 +85,7 @@
                         <dt><?= T('营业执照') ?></dt>
                         <dd>
                             <?php
-                            foreach ($order->items as $i => $vItem) {
+                            foreach ($items as $i => $vItem) {
                                 $vItem = (array)$vItem;
                                 if ($license_images = $vItem['license_images']) {
                                     foreach ((array)$license_images as $index => $license_image) {
@@ -101,7 +101,7 @@
                         <dt><?= T('其他执照') ?></dt>
                         <dd>
                             <?php
-                            foreach ($order->items as $i => $vItem) {
+                            foreach ($items as $i => $vItem) {
                                 $vItem = (array) $vItem;
                                 if ($extra_images = $vItem['extra_images']) {
                                     foreach ((array)$extra_images as $index => $extra_image) {
