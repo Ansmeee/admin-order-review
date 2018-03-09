@@ -80,7 +80,7 @@ class Review extends \Gini\Controller\CGI
         ]));
     }
 
-    private function _getSearchGroup($group)
+    private function _getCurrentGroupCode($group)
     {
         $conf       = \Gini\Config::get('app.order_review_process');
         $steps      = array_keys($conf['steps']);
