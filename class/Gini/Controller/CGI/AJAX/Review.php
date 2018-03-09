@@ -28,7 +28,7 @@ class Review extends \Gini\Controller\CGI
     {
         $me = _G('ME');
         $group = _G('GROUP');
-        $limit = 20;
+        $limit = 15;
         $start = ($page - 1) * $limit;
         $instances = [];
         $objects = [];
@@ -45,25 +45,26 @@ class Review extends \Gini\Controller\CGI
             if ($user->id && !$isMemberOfGroup) return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
 
             // 构造检索条件
-            $searchInstanceParams['sortBy']  = ['startTime' => 'desc'];
-            $searchInstanceParams['history'] = true;
-            $searchInstanceParams['process'] = $process->id;
-            if ($groupCode = $this->_getSearchGroup($current_group)) {
-                $searchInstanceParams['variables']['candidate_group'] = '='.$groupCode;
+            $searchInstanceParams['orderBy']         = ['startTime' => 'desc'];
+            $searchInstanceParams['key']             = $process->id;
+            if ($this->_getCurrentGroupCode($candidateGroup->id)) {
+                $searchInstanceParams['candidate_group'] = $this->_getCurrentGroupCode($candidateGroup->id);
             }
 
-            // 检索数据 处理数据
-            $rdata      = $engine->searchProcessInstances($searchInstanceParams);
-            $instances  = $engine->getProcessInstances($rdata->token, $start, $limit);
+            $driver = \Gini\Process\Driver\Engine::of('bpm2');
+            $rdata = $driver->searchInstances($searchInstanceParams);
+            if (!$rdata['total']) {
+                return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
+            }
+            $instances = $driver->getInstances($rdata['token'], $start, $limit);
 
-            if (!$rdata->total) throw new \Gini\BPM\Exception();
-
-            foreach ($instances as $instance) {
+            foreach ($instances as $oinstance) {
+                $instance           = $engine->ProcessInstance($oinstance->id);
                 $object             = new \stdClass();
-                $object->instance   = $instance;
+                $object->instance   = $oinstance->id;
                 $object->order      = $this->_getInstanceObject($instance);
                 $object->status     = $this->_getInstanceStatus($instance);
-                $objects[$instance->id] = $object;
+                $objects[$oinstance->id] = $object;
             }
         } catch (\Gini\BPM\Exception $e){
             return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/list-none'));
@@ -74,7 +75,7 @@ class Review extends \Gini\Controller\CGI
             'type'          => $type,
             'group'         => $candidateGroup->id,
             'page'          => $page,
-            'total'         => ceil($rdata->total/$limit),
+            'total'         => ceil($rdata['total']/$limit),
             'vTxtTitles'    => \Gini\Config::get('haz.types')
         ]));
     }
