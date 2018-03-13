@@ -56,7 +56,7 @@
                     <?php }?>
                 </div>
                 <?php }?>
-                <?php if (\Gini\Config::get('app.is_show_order_instruction') === true && is_array($order->instruction) && isset($order->instruction->path)) {
+                <?php if (\Gini\Config::get('app.is_show_order_instruction') === true && $order->instruction && isset($order->instruction->path)) {
                     $id = $type === 'history' ? $type.'-'.$instance->id : $type.'-'.$task->id;
                 ?>
                     <div class="board-info-block">
