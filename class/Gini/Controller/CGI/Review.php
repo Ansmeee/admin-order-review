@@ -127,31 +127,34 @@ class Review extends Layout\Board
         $id = $explode[1];
         if (!$id) return  $this->redirect('error/404');
 
-        $conf = \Gini\Config::get('app.order_review_process');
         $engine = \Gini\BPM\Engine::of('order_review');
-        $process = $engine->process($conf['name']);
 
         if ($approvalType == 'pending') {
             $task = $engine->task($id);
             if (!$task || !$task->id) return  $this->redirect('error/404');
-            $id = $task->processInstanceId;
+            $order = $this->_getTaskObject($task);
+            if (!$order->id) return;
+        } else if ($approvalType == 'history') {
+            $instance = $engine->processInstance($id);
+            if (!$instance || !$instance->id) return;
+            $order = $this->_getInstanceObject($instance);
+            if (!$order->id) return;
+        } else {
+            $this->redirect('error/404');
         }
         // 获取订单信息
-        $instance = $engine->processInstance($id);
-        if (!$instance || !$instance->id) return  $this->redirect('error/404');
-
-        $order = $this->_getInstanceObject($instance, true);
 
         if ((\Gini\Config::get('app.is_show_order_instruction') === true) && ($type === 'instruction')) {
             $info = [
-                'name' => $order->instruction['name'],
-                'path' => $order->instruction['path'],
+                'name' => $order->instruction->name,
+                'path' => $order->instruction->path,
             ];
         } else {
             $items = $order->items;
             $item  = (array)$items[$item_index];
             $info  = (array)$item[$type.'_images'][$license_index];
         }
+
 
         $fullpath = \Gini\Core::locateFile('data/customized/'.$info['path']);
         if(is_file($fullpath)) {
@@ -191,10 +194,14 @@ class Review extends Layout\Board
             $order = $data;
         }
 
-        if (\Gini\Config::get('app.is_show_order_reagent_purpose') === true) {
-            $order->purpose = $data->purpose;
-        }
-
         return $order;
+    }
+
+    private function _getTaskObject($task)
+    {
+        $rdata = $task->getVariables('data');
+        $data = json_decode($rdata['value']);
+
+        return $data;
     }
 }

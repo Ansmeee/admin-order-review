@@ -56,7 +56,7 @@
                     <?php }?>
                 </div>
                 <?php }?>
-                <?php if (\Gini\Config::get('app.is_show_order_instruction') && is_array($order->instruction) && isset($order->instruction['path'])) {
+                <?php if (\Gini\Config::get('app.is_show_order_instruction') === true && $order->instruction && isset($order->instruction->path)) {
                     $id = $type === 'history' ? $type.'-'.$instance->id : $type.'-'.$task->id;
                 ?>
                     <div class="board-info-block">
@@ -66,7 +66,7 @@
                                 <dt><?= H(T('使用说明附件')) ?></dt>
                                 <dd>
                                     <?php
-                                        echo '<p><a href="review/attach-download/'.$id.'/'.$i.'/'.$index.'/instruction"><i class="fa fa-file"></i><span style="padding:0px 5px;">'.$order->instruction['name'].'</span></a></p>';
+                                        echo '<p><a href="review/attach-download/'.$id.'/0/0/instruction"><i class="fa fa-file"></i><span style="padding:0px 5px;">'.$order->instruction->name.'</span></a></p>';
                                     ?>
                                 </dd>
                             </dl>
@@ -85,7 +85,7 @@
                         <dt><?= T('营业执照') ?></dt>
                         <dd>
                             <?php
-                            foreach ($order->items as $i => $vItem) {
+                            foreach ($items as $i => $vItem) {
                                 $vItem = (array)$vItem;
                                 if ($license_images = $vItem['license_images']) {
                                     foreach ((array)$license_images as $index => $license_image) {
@@ -101,7 +101,7 @@
                         <dt><?= T('其他执照') ?></dt>
                         <dd>
                             <?php
-                            foreach ($order->items as $i => $vItem) {
+                            foreach ($items as $i => $vItem) {
                                 $vItem = (array) $vItem;
                                 if ($extra_images = $vItem['extra_images']) {
                                     foreach ((array)$extra_images as $index => $extra_image) {

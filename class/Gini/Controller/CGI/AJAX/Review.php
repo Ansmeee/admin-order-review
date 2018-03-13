@@ -440,13 +440,11 @@ class Review extends \Gini\Controller\CGI
             return;
         }
 
-        $conf = \Gini\Config::get('app.order_review_process');
-        $processName = $conf['name'];
         $engine = \Gini\BPM\Engine::of('order_review');
 
         $instance = $engine->processInstance($id);
         if (!$instance || !$instance->id) return;
-        $order = $this->_getInstanceObject($instance, true);
+        $order = $this->_getInstanceObject($instance);
         if (!$order->id) return;
         return \Gini\IoC::construct('\Gini\CGI\Response\HTML', V('review/info', [
             'order'=> $order,
