@@ -1,4 +1,4 @@
-z<?php
+<?php
 
 namespace Gini\Controller\CGI\AJAX;
 
