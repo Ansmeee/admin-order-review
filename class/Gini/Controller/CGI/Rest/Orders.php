@@ -189,26 +189,30 @@ class Orders extends Base\Index
         }
 
         // 构造搜索条件
-        $search_params = [
-            'sortBy'         => ['startTime' => 'desc'],
-            'process'        => $process->id,
-            'history'        => true
-        ];
+        $searchInstanceParams['orderBy'] = ['startTime' => 'desc'];
+        $searchInstanceParams['key']     = $process->id;
 
-        if ($groupCode = $this->_getSearchGroup($group_id)) {
-            $search_params['variables']['candidate_group'] = '='.$groupCode;
+        if ($groupCode = $this->_getCurrentGroupCode($group_id)) {
+            $searchInstanceParams['candidate_group'] = $groupCode;
         }
 
         if ($status !== '') {
-            $search_params['variables']['status'] = '='.$status;
+            $searchInstanceParams['status'] = $status;
         }
-        
-        // 获取订单信息
-        $result        = $engine->searchProcessInstances($search_params);
-        $instances     = $engine->getProcessInstances($result->token, $start*$per_page, $per_page);
-        $data['total'] = $result->total;
 
-        foreach ($instances as $instance) {
+        $driver = \Gini\Process\Driver\Engine::of('bpm2');
+        $rdata  = $driver->searchInstances($searchInstanceParams);
+
+        if (!$rdata['total']) {
+            $response = $this->response(200, "获取成功", $data);
+            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+        }
+
+        $instances = $driver->getInstances($rdata['token'], $start * $per_page, $per_page);
+        $data['total'] = $rdata['total'];
+
+        foreach ($instances as $oinstance) {
+            $instance = $engine->ProcessInstance($oinstance->id);
             $order = $this->_getOrderObject($instance, true);
 
             $info = [
@@ -319,7 +323,7 @@ class Orders extends Base\Index
 
     /**
     * @brief 同意订单
-    *  
+    *
     * @return
      */
     public function postAgree()
@@ -721,7 +725,7 @@ class Orders extends Base\Index
 
     private function _getInstanceStatus($instance)
     {
-        try {         
+        try {
             $params['variableName'] = 'status';
             $rdata = (array) $instance->getVariables($params);
             $value = current($rdata)['value'];
@@ -737,11 +741,11 @@ class Orders extends Base\Index
                     break;
                 default:
                     $value = 'error';
-                    $code  = T('系统处理中'); 
+                    $code  = T('系统处理中');
             }
         } catch (\Gini\BPM\Exception $e) {
             $value = 'error';
-            $code  = T('系统处理中'); 
+            $code  = T('系统处理中');
         }
 
         return [
@@ -881,7 +885,7 @@ class Orders extends Base\Index
         return true;
     }
 
-    private function _getSearchGroup($group)
+    private function _getCurrentGroupCode($group)
     {
         $conf       = \Gini\Config::get('app.order_review_process');
         $steps      = array_keys($conf['steps']);
