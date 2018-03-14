@@ -98,13 +98,6 @@ class Debade extends \Gini\Controller\API
 
         if ($instance->id && $instance->id!=$instanceID) {
             $this->_setOrderInstanceID($processName, $data['voucher'], $instance->id);
-            // 记录这个 instance 的 ID
-            $params = [
-                'variableName'  => 'instance',
-                'type'          => 'string',
-                'value'         => $instance->id
-            ];
-            $instance->setVariable($params);
         }
 
     }
