@@ -236,7 +236,7 @@ class Tools extends \Gini\Controller\ClI
     public function actionUpdateFinishedInstances()
     {
         $start = 0;
-        $perpage = 25;
+        $perpage = 100;
         $node = \Gini\Config::get('app.node');
 
         $his_process_name = 'order-review-process';
@@ -293,13 +293,13 @@ class Tools extends \Gini\Controller\ClI
                         $tasks = $engine->getTasks($result->token, 0, $result->total);
                         $task = current($tasks);
                         if (!$task->complete()) {
-                            echo $instance->id.'---'.$create_instance->id."---task---".$task->id."---x\n";
+                            echo ($start-100).'-'.$instance->id.'---'.$create_instance->id."---task---".$task->id."---x\n";
                             continue;
                         }
-                        echo $instance->id.'---'.$create_instance->id."---o\n";
+                        echo ($start-100).'-'.$instance->id.'---'.$create_instance->id."---o\n";
                     }
                 } catch (\Gini\BPM\Exception $e) {
-                   echo $instance->id."---x\n";
+                   echo ($start-100).'-'.$instance->id."---x\n";
                 }
             }
         }
@@ -546,6 +546,50 @@ class Tools extends \Gini\Controller\ClI
         $data = json_decode(current($rdata)['value']);
         $bool = $this->_setVariable($engine, $instance, $data);
         echo $bool."\n";
+    }
+
+    public function actionForSJTU()
+    {
+        $start = 0;
+        $limit = 100;
+        list($process, $engine) = $this->_getProcessEngine();
+        $searchInstanceParams['key']             = $process->id;
+        $driver = \Gini\Process\Driver\Engine::of('bpm2');
+        $results = $driver->searchInstances($searchInstanceParams);
+
+        while (true) {
+            $instances = $driver->getInstances($results['token'], $start, $limit);
+            if (!count($instances)) {
+                break ;
+            }
+
+            $start += $limit;
+
+            foreach ($instances as $oinstance) {
+                $instance = $engine->ProcessInstance($oinstance->id);
+                if ($instance->state !== 'COMPLETED') continue;
+                $params['variableName'] = 'data';
+                $rdata = $instance->getVariables($params);
+                $data = json_decode(current($rdata)['value']);
+
+                $result = $this->_doIt($engine, $instance, $data);
+
+                if (is_array($result) && count($result)) {
+                    foreach ($result as $name) {
+                        echo ($start-100).'--'.$instance->id.'--'.$name.'--failed';
+                        echo "\n";
+                    }
+                    continue;
+                } else if($result) {
+                    echo ($start-100).'--'.$instance->id."--done \n";
+                    continue;
+                }
+
+                echo ($start-100).'--'.$instance->id."--fail \n";
+            }
+        }
+
+        echo "DONE \n";
     }
 
     private function _getVariables($data)
