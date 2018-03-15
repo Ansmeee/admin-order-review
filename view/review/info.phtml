@@ -12,13 +12,9 @@
                 <?php
                 $group = a('group', (int)$order->group_id);
 
-                $node = \Gini\Config::get('app')['node'];
-                $tag = "labmai-{$node}/{$order->group_id}";
-
-                $rpc = \Gini\Module\AppBase::getTagDBRPC();
-
-                $school = $rpc->tagdb->data->get($tag);
-                $schoolName = $school['organization']['school_name'];
+                $node = \Gini\Config::get('app.node');
+                $key = "labmai-{$node}/{$order->group_id}";;
+                $school = (array)\Gini\TagDB\Client::of('rpc')->get($key);
 
                 $customer_data = [
                     [T('买方'), $order->group->title?:$order->customer->name],
@@ -30,7 +26,7 @@
                     $customer_data = [
                         [T('买方'), $order->group->title],
                         [T('买方负责人'), $order->group->creator->name],
-                        [T('身份证号'), $order->idnumber],
+                        [T('身份证号'), $school['organization']['school_name']],
                     ];
                 }
                 $vData = [
