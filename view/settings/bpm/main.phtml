@@ -60,7 +60,7 @@ require(['jquery'], function($){
 });
 require(['jquery', 'more', 'url'], function($, More, U){
 
-    var form = <?= J((object)$form) ?>;
+    var form = <?= J((object)$form, JSON_HEX_TAG) ?>;
 
     var $container = $('#access-board .access-members');
     var $bar = $container.find('.search-bar');
