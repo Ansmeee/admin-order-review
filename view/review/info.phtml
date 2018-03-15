@@ -20,13 +20,13 @@
                     [T('买方'), $order->group->title?:$order->customer->name],
                     [T('买方负责人'), $group->creator->name],
                     [T('下单人'), $order->requester->name?:$order->requester_name],
-                    [T('学院'), $schoolName],
+                    [T('学院'), $school['organization']['school_name']],
                 ];
                 if ($order->idnumber) {
                     $customer_data = [
                         [T('买方'), $order->group->title],
                         [T('买方负责人'), $order->group->creator->name],
-                        [T('身份证号'), $school['organization']['school_name']],
+                        [T('身份证号'), $order->idnumber],
                     ];
                 }
                 $vData = [
