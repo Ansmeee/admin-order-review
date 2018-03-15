@@ -11,10 +11,20 @@
             <div class="modal-body">
                 <?php
                 $group = a('group', (int)$order->group_id);
+
+                $node = \Gini\Config::get('app')['node'];
+                $tag = "labmai-{$node}/{$order->group_id}";
+
+                $rpc = \Gini\Module\AppBase::getTagDBRPC();
+
+                $school = $rpc->tagdb->data->get($tag);
+                $schoolName = $school['organization']['school_name'];
+
                 $customer_data = [
                     [T('买方'), $order->group->title?:$order->customer->name],
                     [T('买方负责人'), $group->creator->name],
                     [T('下单人'), $order->requester->name?:$order->requester_name],
+                    [T('学院'), $schoolName],
                 ];
                 if ($order->idnumber) {
                     $customer_data = [
