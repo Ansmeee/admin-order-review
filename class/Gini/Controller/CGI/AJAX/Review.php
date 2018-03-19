@@ -432,6 +432,14 @@ class Review extends \Gini\Controller\CGI
         return [$process, $engine];
     }
 
+    private static function getTagInfo($id){
+        if (!$id) return [];
+        $node = \Gini\Config::get('app.node');
+        $key = "labmai-{$node}/{$id}";;
+        $tagInfo = (array)\Gini\TagDB\Client::of('rpc')->get($key);
+        return $tagInfo;
+    }
+
     public function actionInstance($id)
     {
         $me = _G('ME');
@@ -451,6 +459,7 @@ class Review extends \Gini\Controller\CGI
             'vTxtTitles' => \Gini\Config::get('haz.types'),
             'type' => 'history',
             'instance' => $instance,
+            'tagInfo' => self::getTagInfo($order->group_id),
         ]));
     }
 
@@ -477,6 +486,7 @@ class Review extends \Gini\Controller\CGI
             'order'=> $order,
             'task'=> $task,
             'type'=> 'pending',
+            'tagInfo' => self::getTagInfo($order->group_id),
         ]));
     }
 
