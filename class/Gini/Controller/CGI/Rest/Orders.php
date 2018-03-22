@@ -561,12 +561,12 @@ class Orders extends Base\Index
         $data['infos'][] = $delivery;
         // 易制爆合法使用说明
         $attach_id = ($type === 2) ? 'history-'.$instance->id : 'pending-'.$task->id;
-        if (\Gini\Config::get('app.is_show_order_instruction') && is_array($order->instruction) && isset($order->instruction['path'])) {
+        if (\Gini\Config::get('app.is_show_order_instruction') && isset($order->instruction)) {
             $attach_download = [
                 "type"   => 1,
                 "title"  => T('化学品合法使用说明')
             ];
-            $this->_addOrderInfoList($attach_download, T("使用说明附件"), \Gini\Module\AdminBase::getRedirectUrl('review/attach-download/'.$attch_id.'/0/0/instruction'));
+            $this->_addOrderInfoList($attach_download, T("使用说明附件"), $order->instruction->name, \Gini\Module\AdminBase::getRedirectUrl('review/attach-download/'.$attch_id.'/0/0/instruction'));
             $data['infos'][] = $attach_download;
         }
         // 自购附件信息
