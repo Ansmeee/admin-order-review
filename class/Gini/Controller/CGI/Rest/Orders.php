@@ -542,7 +542,8 @@ class Orders extends Base\Index
             "title"  => T('买方信息')
         ];
         $this->_addOrderInfoList($customer, T("买方"), $order->group->title?:$order->customer->name);
-        $this->_addOrderInfoList($customer, T("买方负责人"), $group->creator->name);
+        $orderGroup = a('group', (int)$order->group_id);
+        $this->_addOrderInfoList($customer, T("买方负责人"), $orderGroup->creator->name);
         if ($order->idnumber) {
             $this->_addOrderInfoList($customer, T("身份证号"), $order->idnumber);
         } else {
