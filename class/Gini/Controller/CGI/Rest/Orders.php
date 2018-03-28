@@ -549,6 +549,9 @@ class Orders extends Base\Index
         } else {
             $this->_addOrderInfoList($customer, T("下单人"), $order->requester->name?:$order->requester_name);
         }
+
+        $groupTagInfo = $this->_getGroupTagInfo($orderGroup->id);
+        $this->_addOrderInfoList($customer, T("学院"), $groupTagInfo['organization']['school_name']);
         $data['infos'][] = $customer;
         // 送货信息
         $delivery = [
@@ -656,6 +659,20 @@ class Orders extends Base\Index
         $response = $this->response(200, T('获取成功'), $data);
         return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
 
+    }
+
+    private function _getGroupTagInfo($groupID = '')
+    {
+        $info = [];
+
+        if (!$groupID) {
+            return $info;
+        }
+
+        $node = \Gini\Config::get('app.node');
+        $key = "labmai-{$node}/{$groupID}";;
+        $info = (array)\Gini\TagDB\Client::of('rpc')->get($key);
+        return $info;
     }
 
     private function _addOrderInfoList(&$info, $title, $content, $url=null)
