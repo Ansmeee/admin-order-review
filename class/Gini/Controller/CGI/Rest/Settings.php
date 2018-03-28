@@ -50,7 +50,7 @@ class Settings extends Base\Index
     {
         $me = _G('ME');
         $group = _G('GROUP');
-        if (!$me->id || !$group->id || !$me->isAllowedTo('管理权限')) {
+        if (!$me->id || !$group->id) {
             $response = $this->response(401, T('无权访问'));
             return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
         }
