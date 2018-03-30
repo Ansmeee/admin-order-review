@@ -565,7 +565,7 @@ class Orders extends Base\Index
         $data['infos'][] = $delivery;
         // 易制爆合法使用说明
         $attach_id = ($type === 2) ? 'history-'.$instance->id : 'pending-'.$task->id;
-        if (\Gini\Config::get('app.is_show_order_instruction') && isset($order->instruction) && isset($order->instruction->path)) {
+        if (\Gini\Config::get('app.is_show_order_instruction') === true && isset($order->instruction) && isset($order->instruction->path)) {
             $attach_download = [
                 "type"   => 1,
                 "title"  => T('化学品合法使用说明')
