@@ -615,8 +615,8 @@ class Orders extends Base\Index
                 // 其他执照
                 foreach ((array)$vItem['extra_images'] as $index => $extra_image) {
                     $extra_image_arr[] = [
-                        "content" => $license_image->name,
-                        "url"     => \Gini\Module\AdminBase::getRedirectUrl('/review/attach-download/'.$attach_id.'/'.$i.'/'.$index.'/extra')
+                        "content" => $extra_image->name,
+                        "url"     => \Gini\Module\AdminBase::getRedirectUrl('review/attach-download/'.$attach_id.'/'.$i.'/'.$index.'/extra')
                     ];
                 }
             }
