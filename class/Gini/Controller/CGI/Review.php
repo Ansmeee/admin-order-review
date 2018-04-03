@@ -155,28 +155,19 @@ class Review extends Layout\Board
             $info  = (array)$item[$type.'_images'][$license_index];
         }
 
+        $client_id = \Gini\Config::get('app.rpc')['order']['client_id'];
+    	$data = \Gini\Gapper\Client::getInfo($client_id);
+    	$file_name = \Gini\URI::url(rtrim($data['url'], '/') . '/attachment/download-order-file', ['name' => $info['name'],'path' => $info['path']]);
+    	$headers = get_headers($file_name, 1);
 
-        $fullpath = \Gini\Core::locateFile('data/customized/'.$info['path']);
-        if(is_file($fullpath)) {
-            $client = $_SERVER["HTTP_USER_AGENT"];
-            $filename = $info['name'];
-            $encoded_filename = urlencode($filename);
-            $encoded_filename = str_replace("+", "%20", $encoded_filename);
-
-            header('Content-Type: application/octet-stream');
-
-            //兼容IE11
-            if(preg_match("/MSIE/", $client) || preg_match("/Trident\/7.0/", $client)){
-                header('Content-Disposition: attachment; filename="' . $encoded_filename . '"');
-            } else if (preg_match("/Firefox/", $client)) {
-                header('Content-Disposition: attachment; filename*="utf8\'\'' . $filename . '"');
-            } else {
-                header('Content-Disposition: attachment; filename="' . $filename . '"');
-            }
-            readfile($fullpath);
+        if ($headers['Content-Type'] == 'image/png,image/jpg,image/jpeg,application/x-7z-compressed,application/x-rar,application/zip') {
+            $name = $headers['File-Name'] ?: $info['name'].'.jpg';
+            header('Content-Disposition:attachment;filename='.$name);
+            header('Content-Type: image/png,image/jpg,image/jpeg,application/x-7z-compressed,application/x-rar,application/zip');
+            @readfile($file_name);
             exit;
         } else {
-            return $this->redirect('error/404');
+            $this->redirect('error/404');
         }
     }
 
