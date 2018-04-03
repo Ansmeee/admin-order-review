@@ -13,20 +13,20 @@ class Zhongbao extends \Gini\Controller\CLI
 {
     private function getLock()
     {
-        $pidFile = APP_PATH.'/'.DATA_DIR.'/exec-order-push-to-third-process.pid';
+        $pidFile = APP_PATH.'/'.DATA_DIR.'/order-push-to-zb-process.pid';
         $fh = fopen($pidFile, 'r+');
         $lock = flock($fh, LOCK_EX);
         if (!$lock) return false;
         $rawPID = (int)trim(fgets($fh));
         $success = false;
         if ($rawPID && $this->filterWorkers($rawPID)) {
-            error_log("order-push-to-third-with-lock: pid#{$rawPID} running");
+            error_log("order-push-to-zb-with-lock: pid#{$rawPID} running");
         } else if ($pid = getmypid()) {
             ftruncate($fh, 0);
             fwrite($fh, $pid);
             fflush($fh);
             $success = true;
-            error_log("order-push-to-thrid-with-lock: pid#{$pid} new start");
+            error_log("order-push-to-zb-with-lock: pid#{$pid} new start");
         }
         @flock($fh, LOCK_UN);
         @fclose($fh);
@@ -57,7 +57,7 @@ class Zhongbao extends \Gini\Controller\CLI
         $http = new \Gini\HTTP();
         while (true) {
             $infos = those('third/order/push')
-                ->whose('is_push')->is(\Gini\ORM\Order\Push::TYPE_PUSH)
+                ->whose('is_push')->is(\Gini\ORM\Third\Order\Push::TYPE_PUSH)
                 ->limit($start, $limit);
 
             if (!count($infos)) break;
