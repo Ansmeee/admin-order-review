@@ -144,7 +144,10 @@ class Order extends \Gini\Controller\Rest
             if (!$instance->id) throw new \Gini\BPM\Exception("Bad Request");
             if ($instance->state == 'COMPLETED') {
                 $updateData = [];
-                $candidateGroupName = $engine->group('demo2-order-review-process-zb')->name;
+                $conf       = \Gini\Config::get('app.order_review_process');
+                $steps      = array_keys($conf['steps']);
+                $groupCode  = $conf['name'].'-'.array_pop($steps);
+                $candidateGroupName = $engine->group($groupCode)->name;
                 $updateData['userName']           = $userName;
                 $updateData['message']            = $note;
                 $updateData['candidateGroup']     = $candidateGroupName;
