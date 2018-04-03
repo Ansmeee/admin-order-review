@@ -28,27 +28,46 @@ class Order extends \Gini\Controller\Rest
         $tmpItems = $order_data->items;
         $items = [];
         foreach ($tmpItems as $item) {
+            $convertData = self::getMeasure($item->cas_no, $item->package);
             $items[] = [
                 'qrcode'       => '',
                 'product_id'   => $item->id,
+                'casCode'      => $item->cas_no,
                 'manufacturer' => $item->manufacturer,
                 'catalog_no'   => $item->catalog_no,
-                'package'      => $item->package
+                'packages'     => $item->package,
+                'volume'       => $convertData['volume'],   // 该商品购买的总体积
+                'quality'      => $convertData['quality'], // 该商品购买的总质量
+                'buyAmount'    => $item->quantity, // 该商品购买的个数
             ];
         }
+
         // 推送至 中爆 的数据
+        $third_confs = \Gini\Config::get('zhongbao.third_review_info');
+        $apiKey = $third_confs['apikey'];
+        $volumeUnit = $third_confs['volume_unit'];
+        $qualityUnit = $third_confs['quality_unit'];
         $data = [
-            'voucher'     =>  $order_data->voucher,
-            'date'        =>  $order_data->request_date,
-            'price'       =>  $order_data->price,
-            'vendor_code' =>  $order_data->vendor_code,
-            'items'       =>  $items
+            'apiKey'       => self::$apiKey,
+            'voucher'      =>  $order_data->voucher,
+            'buyComUscid'   =>  $basic['uscid'],
+            'applyTime'     =>  $order_data->request_date,
+            'vendorCode'    =>  $order_data->vendor_license_no,
+            'saleComName'   =>  $order_data->vendor_name,
+            'buyCourIdcard' => $order_data->idnumber,
+            'buyCourName'   =>  $order_data->requester_name,
+            'buyUse'        => $order_data->purpose,
+            'buyGoodslists' => json_encode($items),
         ];
 
-        $api = \Gini\Config::get('app.order_review_process')['3rd']['api'];
-        $http = new \Gini\HTTP();
-        $http->header('Content-Type', 'application/json')->post($api, $data);
-
+        $third_order_push = a('third_order_push', ['voucher' => $order_data->voucher]);
+        if (!$third_order_push->id) {
+            $third_order_push->voucher = $order_data->voucher;
+            $third_order_push->ctime   = date('Y-m-d H:i:s');
+            $third_order_push->push_data = $data;
+            $third_order_push->is_push = \Gini\ORM\Third\Order\Push::TYPE_PUSH;
+            $third_order_push->save();
+        }
     }
 
     /**
@@ -66,6 +85,7 @@ class Order extends \Gini\Controller\Rest
         $note     = $form['note'];
         $client_id      = $form['client_id'];
         $client_secret  = $form['client_secret'];
+        $qrcodes  = $form['qrcodes'];
 
         // 首先做验证
         $verify = $this->_verify($client_id, $client_secret);
@@ -94,7 +114,7 @@ class Order extends \Gini\Controller\Rest
             return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
         }
 
-        if (!count($license)) {
+        if ($action == 'approve' && (!count($license) || !count($qrcodes))) {
             $response = [
                 'code'  => 400,
                 'msg'   => T("Bad Request: license is not available !")
@@ -122,6 +142,27 @@ class Order extends \Gini\Controller\Rest
             $instances   = $engine->getProcessInstances($rdata->token, 0, 1);
             $instance = current($instances);
             if (!$instance->id) throw new \Gini\BPM\Exception("Bad Request");
+            if ($instance->state == 'COMPLETED') {
+                $updateData = [];
+                $conf       = \Gini\Config::get('app.order_review_process');
+                $steps      = array_keys($conf['steps']);
+                $groupCode  = $conf['name'].'-'.array_pop($steps);
+                $candidateGroupName = $engine->group($groupCode)->name;
+                $updateData['userName']           = $userName;
+                $updateData['message']            = $note;
+                $updateData['candidateGroup']     = $candidateGroupName;
+                $updateData['voucher']            = $orderData->voucher;
+                $updateData['customized']         = $orderData->customized;
+                $updateData['type']               = \Gini\ORM\Order::OPERATE_TYPE_APPROVE;
+                $updateData['third_license']      = $license ?: [];
+                $updateData['qrcodes']            = $qrcodes;
+                $this->_doUpdate($updateData);
+                $response = [
+                    'code' => 200,
+                    'msg'  => '订单已审核结束'
+                ];
+                return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+            }
 
             // 拿到 instance 对应的 task
             $search_params['process']           = $process->id;
@@ -137,6 +178,10 @@ class Order extends \Gini\Controller\Rest
             if (!$this->_isAvailableGroup($candidateGroup->id)) {
                 throw new \Gini\BPM\Exception("Bad Request");
             }
+
+            $params['variableName'] = 'data';
+            $objectData = $instance->getVariables($params);
+            $orderData = json_decode(current($objectData)['value']);
         } catch (\Gini\BPM\Exception $e) {
             $response = [
                 'code' => 500,
@@ -159,8 +204,8 @@ class Order extends \Gini\Controller\Rest
             $updateData['userName']           = $userName;
             $updateData['message']            = $note;
             $updateData['candidateGroup']     = $candidateGroup->name;
-            $updateData['voucher']            = $orderData['voucher'];
-            $updateData['customized']         = $orderData['customized'];
+            $updateData['voucher']            = $orderData->voucher;
+            $updateData['customized']         = $orderData->customized;
             $updateData['type']               = \Gini\ORM\Order::OPERATE_TYPE_APPROVE;
 
             if ($action == 'approve') {
@@ -255,7 +300,9 @@ class Order extends \Gini\Controller\Rest
                     ]),
                     't' => $now,
                     'd' => $data['message'],
-                ]
+                ],
+                'purchasing_receipt' => $data['third_license'],
+                'qrcodes' => $data['qrcodes'],
             ]);
 
             // 在mall-old 记录操作记录
