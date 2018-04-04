@@ -156,9 +156,9 @@ class Review extends Layout\Board
         }
 
         $client_id = \Gini\Config::get('app.rpc')['order']['client_id'];
-    	$data = \Gini\Gapper\Client::getInfo($client_id);
-    	$file_name = \Gini\URI::url(rtrim($data['url'], '/') . '/attachment/download-order-file', ['name' => $info['name'],'path' => $info['path']]);
-    	$headers = get_headers($file_name, 1);
+        $data = \Gini\Gapper\Client::getInfo($client_id);
+        $file_name = \Gini\URI::url(rtrim($data['url'], '/') . '/attachment/download-order-file', ['name' => $info['name'],'path' => $info['path']]);
+        $headers = get_headers($file_name, 1);
 
         if ($headers['Content-Type'] == 'image/png,image/jpg,image/jpeg,application/x-7z-compressed,application/x-rar,application/zip') {
             $name = $headers['File-Name'] ?: $info['name'].'.jpg';
