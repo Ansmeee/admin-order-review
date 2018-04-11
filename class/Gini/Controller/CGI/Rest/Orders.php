@@ -91,10 +91,11 @@ class Orders extends Base\Index
             $items = (array)$order->items;
             foreach ($items as $vItem) {
                 $vItem = (array)$vItem;
+                $productName = $vItem['package'] ? $vItem['name'].' * '.$vItem['quantity'].' ( '.$vItem['package'].' ) ' : $vItem['name'].' * '.$vItem['quantity'];            
                 $item = [
                     "is_customized"     => $vItem['customized'] ? 1 : 0,
                     "customized_reason" => ($vItem['customized'] && $vItem['reason']) ? $vItem['reason'] : T(''),
-                    "product_name"      => $vItem['name'].' * '.$vItem['quantity']
+                    "product_name"      => $productName
                 ];
                 // 获取货物标签
                 if ($vItem['cas_no']) {
@@ -228,10 +229,11 @@ class Orders extends Base\Index
             $items = (array)$order->items;
             foreach ($items as $vItem) {
                 $vItem = (array)$vItem;
+                $productName = $vItem['package'] ? $vItem['name'].' * '.$vItem['quantity'].' ( '.$vItem['package'].' ) ' : $vItem['name'].' * '.$vItem['quantity'];
                 $item = [
                     "is_customized"     => $vItem['customized'] ? 1 : 0,
                     "customized_reason" => $vItem['customized'] && $vItem['reason'] ? $vItem['reason'] : '',
-                    "product_name"      => $vItem['name'].' * '.$vItem['quantity']
+                    "product_name"      => $productName
                 ];
                 // 获取商品标签
                 if ($vItem['cas_no']) {
