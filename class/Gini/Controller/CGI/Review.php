@@ -120,8 +120,12 @@ class Review extends Layout\Board
         ]);
     }
 
-    public function actionAttachDownload($id, $item_index=0, $license_index=0, $type)
+    public function actionAttachDownload($id, $type, $item_index=0, $license_index=0)
     {
+        if (!in_array($type, ['license','extra','instruction'])) {
+            $this->redirect('error/404');
+        }
+
         $explode = explode('-', $id, 2);
         $approvalType = $explode[0];
         $id = $explode[1];
@@ -142,26 +146,14 @@ class Review extends Layout\Board
         } else {
             $this->redirect('error/404');
         }
-        // 获取订单信息
-
-        if ((\Gini\Config::get('app.is_show_order_instruction') === true) && ($type === 'instruction')) {
-            $info = [
-                'name' => $order->instruction->name,
-                'path' => $order->instruction->path,
-            ];
-        } else {
-            $items = $order->items;
-            $item  = (array)$items[$item_index];
-            $info  = (array)$item[$type.'_images'][$license_index];
-        }
 
         $client_id = \Gini\Config::get('app.rpc')['order']['client_id'];
-        $data = \Gini\Gapper\Client::getInfo($client_id);
-        $file_name = \Gini\URI::url(rtrim($data['url'], '/') . '/attachment/download-order-file', ['name' => $info['name'],'path' => $info['path']]);
-        $headers = get_headers($file_name, 1);
+    	$data = \Gini\Gapper\Client::getInfo($client_id);
+    	$file_name = \Gini\URI::url(rtrim($data['url'], '/') . '/attachment/download-order-review-file', ['voucher' => $order->voucher, 'type' => $type, 'item_index' =>$item_index, 'index' => $license_index]);
+    	$headers = get_headers($file_name, 1);
 
         if ($headers['Content-Type'] == 'image/png,image/jpg,image/jpeg,application/x-7z-compressed,application/x-rar,application/zip') {
-            $name = $headers['File-Name'] ?: $info['name'].'.jpg';
+            $name = $headers['File-Name'] ?: $order->voucher.'.jpg';
             header('Content-Disposition:attachment;filename='.$name);
             header('Content-Type: image/png,image/jpg,image/jpeg,application/x-7z-compressed,application/x-rar,application/zip');
             @readfile($file_name);

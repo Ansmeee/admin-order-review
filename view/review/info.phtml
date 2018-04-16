@@ -69,7 +69,7 @@
                                 <dt><?= H(T('使用说明附件')) ?></dt>
                                 <dd>
                                     <?php
-                                        echo '<p><a href="review/attach-download/'.$id.'/0/0/instruction"><i class="fa fa-file"></i><span style="padding:0px 5px;">'.$order->instruction->name.'</span></a></p>';
+                                        echo '<p><a href="review/attach-download/'.$id.'/instruction"><i class="fa fa-file"></i><span style="padding:0px 5px;">'.$order->voucher.'.'.pathinfo($order->instruction->name, PATHINFO_EXTENSION).'</span></a></p>';
                                     ?>
                                 </dd>
                             </dl>
@@ -93,7 +93,7 @@
                                 if ($license_images = $vItem['license_images']) {
                                     foreach ((array)$license_images as $index => $license_image) {
                                         $name = $license_image->name;
-                                        echo '<p><a href="review/attach-download/'.$id.'/'.$i.'/'.$index.'/license"><i class="fa fa-file"></i><span style="padding:0px 5px;">'.$name.'</span></a></p>';
+                                        echo '<p><a href="review/attach-download/'.$id.'/license/'.$i.'/'.$index.'"><i class="fa fa-file"></i><span style="padding:0px 5px;">'.$name.'</span></a></p>';
                                     }
                                 }
                             }
@@ -109,7 +109,7 @@
                                 if ($extra_images = $vItem['extra_images']) {
                                     foreach ((array)$extra_images as $index => $extra_image) {
                                         $name = $extra_image->name;
-                                        echo '<p><a href="review/attach-download/'.$id.'/'.$i.'/'.$index.'/extra"><i class="fa fa-file"></i><span style="padding:0px 5px;">'.$name.'</span></a></p>';
+                                        echo '<p><a href="review/attach-download/'.$id.'/extra/'.$i.'/'.$index.'"><i class="fa fa-file"></i><span style="padding:0px 5px;">'.$name.'</span></a></p>';
                                     }
                                 }
                             }

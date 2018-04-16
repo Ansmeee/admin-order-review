@@ -91,7 +91,7 @@ class Orders extends Base\Index
             $items = (array)$order->items;
             foreach ($items as $vItem) {
                 $vItem = (array)$vItem;
-                $productName = $vItem['package'] ? $vItem['name'].' * '.$vItem['quantity'].' ( '.$vItem['package'].' ) ' : $vItem['name'].' * '.$vItem['quantity'];            
+                $productName = $vItem['package'] ? $vItem['name'].' * '.$vItem['quantity'].' ( '.$vItem['package'].' ) ' : $vItem['name'].' * '.$vItem['quantity'];
                 $item = [
                     "is_customized"     => $vItem['customized'] ? 1 : 0,
                     "customized_reason" => ($vItem['customized'] && $vItem['reason']) ? $vItem['reason'] : T(''),
@@ -572,7 +572,7 @@ class Orders extends Base\Index
                 "type"   => 1,
                 "title"  => T('化学品合法使用说明')
             ];
-            $this->_addOrderInfoList($attach_download, T("使用说明附件"), $order->instruction->name, \Gini\Module\AdminBase::getRedirectUrl('review/attach-download/'.$attach_id.'/0/0/instruction'));
+            $this->_addOrderInfoList($attach_download, T("使用说明附件"), $order->voucher . '.' . pathinfo($order->instruction->name, PATHINFO_EXTENSION), \Gini\Module\AdminBase::getRedirectUrl('review/attach-download/'.$attach_id.'/instruction'));
             $data['infos'][] = $attach_download;
         }
         // 自购附件信息
@@ -611,14 +611,14 @@ class Orders extends Base\Index
                 foreach ((array)$vItem['license_images'] as $index => $license_image) {
                     $license_image_arr[] = [
                         "content" => $license_image->name,
-                        "url"     => \Gini\Module\AdminBase::getRedirectUrl('review/attach-download/'.$attach_id.'/'.$i.'/'.$index.'/license')
+                        "url"     => \Gini\Module\AdminBase::getRedirectUrl('review/attach-download/'.$attach_id.'/license/'.$i.'/'.$index)
                     ];
                 }
                 // 其他执照
                 foreach ((array)$vItem['extra_images'] as $index => $extra_image) {
                     $extra_image_arr[] = [
                         "content" => $extra_image->name,
-                        "url"     => \Gini\Module\AdminBase::getRedirectUrl('review/attach-download/'.$attach_id.'/'.$i.'/'.$index.'/extra')
+                        "url"     => \Gini\Module\AdminBase::getRedirectUrl('review/attach-download/'.$attach_id.'/extra/'.$i.'/'.$index)
                     ];
                 }
             }
