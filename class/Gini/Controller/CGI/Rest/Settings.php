@@ -56,10 +56,6 @@ class Settings extends Base\Index
         }
         // 获取组信息
         $groups = $this->_getGroups();
-        if (!$groups) {
-            $response = $this->response(400, T('获取失败，请重试'));
-            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
-        }
 
         $data = [
             "total" => count($groups),
@@ -372,10 +368,6 @@ class Settings extends Base\Index
 
         // 获取已存在的组别
         $groups = $this->_getGroups();
-        if (!$groups) {
-            $response = $this->response(400, T('获取失败，请重试'));
-            return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
-        }
     
         // 去除已存在的组
         $rgroups = array_udiff($organizations, $groups, function ($a, $b) {
@@ -578,7 +570,7 @@ class Settings extends Base\Index
             $groups = $engine->getGroups($o->token, 0, $o->total);
             return $groups;
         } catch (\Gini\BPM\Exception $e) {
-            return false;
+            return [];
         }
     }
 
