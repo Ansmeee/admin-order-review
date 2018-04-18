@@ -58,6 +58,7 @@ class Index extends Layout\Board{
 
     public function actionManager()
     {
+        $this->redirect(\Gini\Module\AdminBase::getFEUrl('order/review/authority'));
         $me = _G('ME');
         if (!$me->isAllowedTo('管理权限')) {
             $this->redirect('error/401');
