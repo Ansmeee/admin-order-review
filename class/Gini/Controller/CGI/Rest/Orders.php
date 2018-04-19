@@ -380,15 +380,14 @@ class Orders extends Base\Index
                 $updateData['customized']         = $orderData['customized'];
                 $updateData['type']               = \Gini\ORM\Order::OPERATE_TYPE_APPROVE;
 
-                // 结束远程的 task 同时记录操作记录
-                $data['opt'] = true;
-                $bool = $this->_completeTask($data);
-                if (!$bool) throw new \Gini\BPM\Exception();
-
                 $updateData['opt'] = T('审核通过');
 
                 // 更新本地订单的操作信息
                 $this->_doUpdate($updateData, $me);
+                // 结束远程的 task 同时记录操作记录
+                $data['opt'] = true;
+                $bool = $this->_completeTask($data);
+                if (!$bool) throw new \Gini\BPM\Exception();
             } catch (\Gini\BPM\Exception $e) {
                 continue;
             }
