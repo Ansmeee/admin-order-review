@@ -31,6 +31,19 @@ class Bpm2
         $params['sortOrder'] = $order;
         $params['sortBy']    = $by;
 
+        // 按照订单编号搜索
+        if (isset($criteria['voucher'])) {
+            $params['voucher'] = $criteria['voucher'];
+            $sql = self::_getSearchByVoucherSql($params);
+            $data = @$db->query($sql)->rows();
+            $this->_cacheQuery[$token] = $sql;
+
+            return [
+                'token' => $token,
+                'total' => count($data)
+            ];
+        }
+
         // 按 审批组 和 状态查询
         if (isset($criteria['candidate_group']) && isset($criteria['status'])){
             $params['candidate_group'] = $criteria['candidate_group'];
@@ -101,6 +114,23 @@ class Bpm2
     {
         $name  = $criteria['name'];
         $value = $criteria['value'];
+        $key   = $criteria['key'];
+        $order = $criteria['sortOrder'];
+        $by    = $criteria['sortBy'];
+
+        $sql = "SELECT a.`ID_` as id FROM `ACT_HI_PROCINST` as a left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE a.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
+
+        if ($order && $by) {
+            $sql .= " ORDER BY a.`{$order}` {$by}";
+        }
+
+        return $sql;
+    }
+
+    private static function _getSearchByVoucherSql($criteria = [])
+    {
+        $name  = 'voucher';
+        $value = $criteria['voucher'];
         $key   = $criteria['key'];
         $order = $criteria['sortOrder'];
         $by    = $criteria['sortBy'];
