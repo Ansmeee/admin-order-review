@@ -1,4 +1,4 @@
---
+---
 sync-user:
   interval: '30 2 * * *'
   command: bpm user syncwechatinfo
