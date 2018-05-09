@@ -118,7 +118,7 @@ class Bpm2
         $order = $criteria['sortOrder'];
         $by    = $criteria['sortBy'];
 
-        $sql = "SELECT a.`ID_` as id FROM `ACT_HI_PROCINST` as a left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE a.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
+        $sql = "SELECT a.`ID_` as id FROM `ACT_HI_PROCINST` as a left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE b.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
 
         if ($order && $by) {
             $sql .= " ORDER BY a.`{$order}` {$by}";
@@ -135,7 +135,7 @@ class Bpm2
         $order = $criteria['sortOrder'];
         $by    = $criteria['sortBy'];
 
-        $sql = "SELECT a.`ID_` as id FROM `ACT_HI_PROCINST` as a left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE a.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
+        $sql = "SELECT a.`ID_` as id FROM `ACT_HI_PROCINST` as a left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE b.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
 
         if ($order && $by) {
             $sql .= " ORDER BY a.`{$order}` {$by}";
