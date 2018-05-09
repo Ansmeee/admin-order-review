@@ -527,6 +527,7 @@ class Orders extends Base\Index
         }
         // 订单基本信息
         $data = [
+            "groupId"   => $order->group_id,
             "voucher"   => $order->voucher,
             "status"    => (int)$order->status
         ];
@@ -596,7 +597,8 @@ class Orders extends Base\Index
                 "package"           => $vItem['package'],
                 "unit_price"        => ($vItem['unit_price'] == -1) ? T('待询价') : money_format('%.2n', $vItem['unit_price']),
                 "quantity"          => $vItem['quantity'],
-                "price"             => ($vItem['unit_price'] == -1) ? T('待询价') : money_format('%.2n', $vItem['unit_price']*$vItem['quantity'])
+                "price"             => ($vItem['unit_price'] == -1) ? T('待询价') : money_format('%.2n', $vItem['unit_price']*$vItem['quantity']),
+                "cas_no"            => $vItem['cas_no'] ?: ''
             ];
             // 获取货物标签
             if ($vItem['cas_no']) {
@@ -661,6 +663,41 @@ class Orders extends Base\Index
         return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
 
     }
+
+     /**
+      * [getHazTotal 获取存量]
+      * @return
+      */
+     public function getHazTotal()
+     {
+         $me = _G('ME');
+         $group = _G('GROUP');
+         if (!$me->id || !$group->id) {
+             $response = $this->response(401, T('无权访问'));
+             return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+         }
+
+         $form    = $this->form;
+         $groupId = $form['groupId'];
+         $casNo   = $form['casNo'];
+
+         if (!$groupId || !$casNo) {
+             $response = $this->response(400, T('请求错误'));
+             return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+         }
+
+         try {
+             $rpc = \Gini\Module\AppBase::getAppRPC('inventory');
+             $total = $rpc->mall->inventory->GetHazardousTotal($casNo, $groupId);
+         } catch (\Exception $e) {
+             $response = $this->response(500, T('获取失败'));
+             return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+         }
+
+         $data['total'] = $total ?: '';
+         $response = $this->response(200, T('获取成功'), $data);
+         return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
+     }
 
     private function _getGroupTagInfo($groupID = '')
     {

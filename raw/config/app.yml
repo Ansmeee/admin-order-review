@@ -12,6 +12,10 @@ rpc:
     url: ${UNITCONV_API}
   chemdb:
     url: ${CHEMDB_API}
+  inventory:
+    url: ${LAB_INVENTORY_API}
+    client_id: ${LAB_INVENTORY_GAPPER_ID}
+    client_secret: ${LAB_INVENTORY_GAPPER_SECRET}
 
 is_show_order_purpose: ${ADMIN_ORDER_REVIEW_IS_SHOW_ORDER_PURPOSE:=false}
 is_show_order_instruction: ${ADMIN_ORDER_REVIEW_IS_SHOW_ORDER_INSTRUCTION:=false}
