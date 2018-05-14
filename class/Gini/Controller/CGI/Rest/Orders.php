@@ -529,7 +529,8 @@ class Orders extends Base\Index
         $data = [
             "groupId"   => $order->group_id,
             "voucher"   => $order->voucher,
-            "status"    => (int)$order->status
+            "status"    => (int)$order->status,
+            "customized"=> $order->customized ?: false
         ];
         // 供应商信息
         $vendor = [
