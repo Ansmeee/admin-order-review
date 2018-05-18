@@ -27,7 +27,7 @@ class Debade extends \Gini\Controller\API
             return ;
         }
 
-        if (!isset($message['data']['voucher'])) return;
+        if (!$message['data']['voucher']) return;
         $data = $message['data'];
         if ($data['status']!=\Gini\ORM\Order::STATUS_NEED_MANAGER_APPROVE) return;
 
@@ -86,6 +86,9 @@ class Debade extends \Gini\Controller\API
         $cacheData['status']        = 'active';
         $cacheData['client']        = $client;
 
+        if(\Gini\Config::get('app.order_is_approving_can_be_canceled') === true) {
+            $cacheData['review_type'] = 'admin';
+        }
         $instanceID = $this->_getOrderInstanceID($processName, $data['voucher']);
         if ($instanceID) {
             $instance = $engine->processInstance($instanceID);

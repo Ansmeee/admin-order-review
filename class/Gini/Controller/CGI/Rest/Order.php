@@ -34,7 +34,13 @@ class Order extends \Gini\Controller\Rest
     public function postReject()
     {
         $content = file_get_contents('php://input');
-        $order_data = json_decode($content);
+        list($type, $data) = explode('&', $content);
+        $order_data = json_decode($data);
+
+        // 如果 可以由课题组管理员取消订单，则不需执行一下这些代码
+        if ($type == 'group') {
+            return ;
+        }
         $voucher = $order_data->voucher;
         if (!$voucher) return;
         $rpc = self::_getRPC('order');

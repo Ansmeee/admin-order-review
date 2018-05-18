@@ -19,6 +19,7 @@ rpc:
 
 is_show_order_purpose: ${ADMIN_ORDER_REVIEW_IS_SHOW_ORDER_PURPOSE:=false}
 is_show_order_instruction: ${ADMIN_ORDER_REVIEW_IS_SHOW_ORDER_INSTRUCTION:=false}
+order_is_approving_can_be_canceled: ${ORDER_IS_APPROVING_CAN_BE_CANCELED}
 update_history_instance_now: false
 order_review_process:
   name: ${ORDER_REVIEW_PROCESS_NAME}
