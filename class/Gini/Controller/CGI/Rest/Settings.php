@@ -524,10 +524,13 @@ class Settings extends Base\Index
     {
         // 获取 bpm 流程配置
         $conf = \Gini\Config::get('app.order_review_process');
+        $extra = (array)$conf['extra'];
+
         if ($conf) {
         // 获取 bpm 审批机构信息
             foreach ($conf['steps'] as $code => $step) {
-            if ($code === 'school') continue;
+                if ($code === 'school') continue;
+                if (in_array($code, array_keys($extra))) continue;
                 $list[] = [
                     'id'   => $conf['name'].'-'.$code,
                     'name' => $step
@@ -552,6 +555,14 @@ class Settings extends Base\Index
                 'id'    => $conf['name'].'-school-'.$value['code'],
                 'name'  => $value['name']
             ];
+            if (count($extra)) { 
+                foreach ($extra as $code => $name) {
+                    $list[] = [
+                        'id' => $conf['name'].'-'.$code.'-'.$value['code'],
+                        'name' => $value['name'].$name
+                    ];
+                }
+            }
         }
 
         return $list;
