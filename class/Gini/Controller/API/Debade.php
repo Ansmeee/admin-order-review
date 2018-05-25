@@ -59,7 +59,7 @@ class Debade extends \Gini\Controller\API
         $cacheData['customized'] = $data['customized'] ? true : false;
         $cacheData['chemicalTypes'] = array_values($types);
         $groupIDs[] = $node.'-'.$data['group_id'];
-        $cacheData['customerID'] = $groupIDs;
+        $cacheData['groupID'] = $groupIDs;
         //设置 candidate_group
         $key = "labmai-".$node."/".$data['group_id'];
         $info = (array)\Gini\TagDB\Client::of('rpc')->get($key);
