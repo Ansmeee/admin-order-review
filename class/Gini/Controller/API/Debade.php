@@ -52,8 +52,13 @@ class Debade extends \Gini\Controller\API
         foreach ($items as $item) {
             $products .= $item['name'].' ';
             $casNO = $item['cas_no'];
-            $chem_types = (array) \Gini\ChemDB\Client::getTypes($casNO)[$casNO];
-            $types = array_unique(array_merge($types, $chem_types));
+            if (!empty($casNO)) {
+                $chem_types = \Gini\ChemDB\Client::getTypes($casNO)[$casNO];
+            } else {
+                $type = $item['type'];
+                $types[] = $type;
+            }
+            $types = array_unique(array_merge($types, (array)$chem_types));
         }
 
         $cacheData['customized'] = $data['customized'] ? true : false;
