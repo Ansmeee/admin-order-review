@@ -26,11 +26,17 @@ class Debade extends \Gini\Controller\API
         if (\Gini\Config::get('app.update_history_instance_now') === true) {
             return ;
         }
+       
+        $voucher = $message['data']['voucher'];
+        if (!$voucher) return;
 
-        if (!$message['data']['voucher']) return;
-        $data = $message['data'];
-        if ($data['status']!=\Gini\ORM\Order::STATUS_NEED_MANAGER_APPROVE) return;
+        $db = \Gini\Database::db('lab-orders');
+        $sql = "SELECT `status` FROM `order` WHERE `voucher` = '{$voucher}'";
+        $orderStatus = @$db->query($sql)->value();
+        if ($orderStatus != \Gini\ORM\Order::STATUS_NEED_MANAGER_APPROVE) return;
 
+        $data = $message['data'];  
+  
         $bool = $this->_checkOrderCanApprove($data);
         if (!$bool) {
             return ;
