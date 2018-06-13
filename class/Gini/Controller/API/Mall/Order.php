@@ -54,7 +54,7 @@ class Order extends \Gini\Controller\API
             $tagName = "$node#order#$voucher";
             $orderInstance = a('tagdb/tag', ['name' => $tagName]);
             if (!$orderInstance->id) {
-                return false;
+                return true;
             }
 
             $data = $orderInstance->data;
