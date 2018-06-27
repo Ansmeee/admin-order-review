@@ -11,10 +11,104 @@ class Bpm2
     }
 
     private $_cacheQuery = [];
-    public function searchInstances($criteria = [])
+    public function getInstancesTotal($criteria = []) {
+        $db = $this->_db;
+
+        $params['key']       = $criteria['key'];
+        $params['getTotal']  = true;
+
+        // 按照订单编号搜索
+        if (isset($criteria['voucher'])) {
+            $params['voucher'] = $criteria['voucher'];
+
+            $cacheKey = sha1(json_encode($params));
+            $total    = self::cache($cacheKey);
+            if (!is_numeric($total)) {
+                $sql = self::_getSearchByVoucherSql($params);
+                $total = @$db->value($sql);
+                if (is_numeric($total)) {
+                    self::cache($cacheKey, $total);
+                }
+            }
+
+            return $total ?: 0;
+        }
+
+        // 按 审批组 和 状态查询
+        if (isset($criteria['candidate_group']) && isset($criteria['status'])){
+            $params['candidate_group'] = $criteria['candidate_group'];
+            $params['status']          = $criteria['status'];
+
+            $cacheKey = sha1(json_encode($params));
+            $total    = self::cache($cacheKey);
+
+            if (!is_numeric($total)) {
+                $sql = self::_getSearchByGroupAndStatusSql($params);
+                $total = @$db->value($sql);
+                if (is_numeric($total)) {
+                    self::cache($cacheKey, $total);
+                }
+            }
+
+            return $total ?: 0;
+        }
+
+        // 按 审批组 查询
+        if (isset($criteria['candidate_group'])) {
+            $params['name']  = 'candidate_group';
+            $params['value'] = $criteria['candidate_group'];
+
+            $cacheKey = sha1(json_encode($params));
+            $total    = self::cache($cacheKey);
+
+            if (!is_numeric($total)) {
+                $sql = self::_getSql($params);
+                $total = @$db->value($sql);
+                if (is_numeric($total)) {
+                    self::cache($cacheKey, $total);
+                }
+            }
+
+            return $total ?: 0;
+        }
+
+        // 按 状态 查询
+        if (isset($criteria['status'])) {
+            $params['name']  = 'status';
+            $params['value'] = $criteria['status'];
+
+            $cacheKey = sha1(json_encode($params));
+            $total    = self::cache($cacheKey);
+
+            if (!is_numeric($total)) {
+                $sql = self::_getSql($params);
+                $total = @$db->value($sql);
+                if (is_numeric($total)) {
+                    self::cache($cacheKey, $total);
+                }
+            }
+
+            return $total ?: 0;
+        }
+
+        // 没有查询条件
+        $cacheKey = sha1(json_encode($params));
+        $total    = self::cache($cacheKey);
+
+        if (!is_numeric($total)) {
+            $sql = "SELECT count(`ID_`) as id FROM `ACT_HI_PROCINST` WHERE `PROC_DEF_KEY_` = '{$criteria['key']}'";
+            $total = @$db->value($sql);
+            if (is_numeric($total)) {
+                self::cache($cacheKey, $total);
+            }
+        }
+
+        return $total ?: 0;
+    }
+
+    public function getInstances($criteria = [], $start = 0, $limit = 20)
     {
         $db = $this->_db;
-        $token = uniqid();
         $params = [];
         // 处理排序方式
         if (isset($criteria['orderBy'])) {
@@ -35,13 +129,10 @@ class Bpm2
         if (isset($criteria['voucher'])) {
             $params['voucher'] = $criteria['voucher'];
             $sql = self::_getSearchByVoucherSql($params);
-            $data = @$db->query($sql)->rows();
-            $this->_cacheQuery[$token] = $sql;
+            $sql = $sql." LIMIT {$start}, {$limit}";
+            $data = @$this->_db->query($sql)->rows();
 
-            return [
-                'token' => $token,
-                'total' => count($data)
-            ];
+            return $data;
         }
 
         // 按 审批组 和 状态查询
@@ -49,13 +140,10 @@ class Bpm2
             $params['candidate_group'] = $criteria['candidate_group'];
             $params['status']          = $criteria['status'];
             $sql = self::_getSearchByGroupAndStatusSql($params);
-            $data = @$db->query($sql)->rows();
-            $this->_cacheQuery[$token] = $sql;
+            $sql = $sql." LIMIT {$start}, {$limit}";
+            $data = @$this->_db->query($sql)->rows();
 
-            return [
-                'token' => $token,
-                'total' => count($data)
-            ];
+            return $data;
         }
 
         // 按 审批组 查询
@@ -63,13 +151,10 @@ class Bpm2
             $params['name']  = 'candidate_group';
             $params['value'] = $criteria['candidate_group'];
             $sql = self::_getSql($params);
-            $data = @$db->query($sql)->rows();
-            $this->_cacheQuery[$token] = $sql;
+            $sql = $sql." LIMIT {$start}, {$limit}";
+            $data = @$this->_db->query($sql)->rows();
 
-            return [
-                'token' => $token,
-                'total' => count($data)
-            ];
+            return $data;
         }
 
         // 按 状态 查询
@@ -78,13 +163,10 @@ class Bpm2
             $params['value'] = $criteria['status'];
 
             $sql = self::_getSql($params);
-            $data = @$db->query($sql)->rows();
-            $this->_cacheQuery[$token] = $sql;
+            $sql = $sql." LIMIT {$start}, {$limit}";
+            $data = @$this->_db->query($sql)->rows();
 
-            return [
-                'token' => $token,
-                'total' => count($data)
-            ];
+            return $data;
         }
 
         // 没有查询条件
@@ -93,18 +175,7 @@ class Bpm2
             $sql .= " ORDER BY `{$order}` {$by}";
         }
 
-        $data = @$db->query($sql)->rows();
-        $this->_cacheQuery[$token] = $sql;
-
-        return [
-            'token' => $token,
-            'total' => count($data)
-        ];
-    }
-
-    public function getInstances($token, $start = 0, $limit = 20)
-    {
-        $sql = $this->_cacheQuery[$token]." LIMIT {$start}, {$limit}";
+        $sql = $sql." LIMIT {$start}, {$limit}";
         $data = @$this->_db->query($sql)->rows();
 
         return $data;
@@ -117,8 +188,14 @@ class Bpm2
         $key   = $criteria['key'];
         $order = $criteria['sortOrder'];
         $by    = $criteria['sortBy'];
+        $getTotal = $criteria['getTotal'];
 
-        $sql = "SELECT a.`ID_` as id FROM `ACT_HI_PROCINST` as a left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE b.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
+        if ($getTotal) {
+            $sql = "SELECT count(a.`ID_`) FROM `ACT_HI_PROCINST` as a left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE b.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
+
+        } else {
+            $sql = "SELECT a.`ID_` as id FROM `ACT_HI_PROCINST` as a left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE b.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
+        }
 
         if ($order && $by) {
             $sql .= " ORDER BY a.`{$order}` {$by}";
@@ -134,9 +211,14 @@ class Bpm2
         $key   = $criteria['key'];
         $order = $criteria['sortOrder'];
         $by    = $criteria['sortBy'];
+        $getTotal = $criteria['getTotal'];
 
-        $sql = "SELECT a.`ID_` as id FROM `ACT_HI_PROCINST` as a left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE b.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
+        if ($getTotal) {
+            $sql = "SELECT count(a.`ID_`) FROM `ACT_HI_PROCINST` as a left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE b.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
+        } else {
+            $sql = "SELECT a.`ID_` as id FROM `ACT_HI_PROCINST` as a left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE b.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
 
+        }
         if ($order && $by) {
             $sql .= " ORDER BY a.`{$order}` {$by}";
         }
@@ -153,12 +235,30 @@ class Bpm2
         $key         = $criteria['key'];
         $order       = $criteria['sortOrder'];
         $by          = $criteria['sortBy'];
+        $getTotal    = $criteria['getTotal'];
 
-        $sql = "SELECT `ID_` as id FROM `ACT_HI_PROCINST` WHERE `PROC_DEF_KEY_` = '{$key}' AND `ID_` IN (SELECT `PROC_INST_ID_` FROM `ACT_HI_VARINST` WHERE `NAME_` = '{$statusName}' AND `TEXT_`= '{$statusValue}' AND `PROC_INST_ID_` IN (SELECT `PROC_INST_ID_` FROM `ACT_HI_VARINST` WHERE `NAME_` = '{$groupName}' AND `TEXT_`= '{$groupValue}'))";
+        if ($getTotal) {
+            $sql = "SELECT count(`ID_`) FROM `ACT_HI_PROCINST` WHERE `PROC_DEF_KEY_` = '{$key}' AND `ID_` IN (SELECT `PROC_INST_ID_` FROM `ACT_HI_VARINST` WHERE `NAME_` = '{$statusName}' AND `TEXT_`= '{$statusValue}' AND `PROC_INST_ID_` IN (SELECT `PROC_INST_ID_` FROM `ACT_HI_VARINST` WHERE `NAME_` = '{$groupName}' AND `TEXT_`= '{$groupValue}'))";
+        } else {
+             $sql = "SELECT `ID_` as id FROM `ACT_HI_PROCINST` WHERE `PROC_DEF_KEY_` = '{$key}' AND `ID_` IN (SELECT `PROC_INST_ID_` FROM `ACT_HI_VARINST` WHERE `NAME_` = '{$statusName}' AND `TEXT_`= '{$statusValue}' AND `PROC_INST_ID_` IN (SELECT `PROC_INST_ID_` FROM `ACT_HI_VARINST` WHERE `NAME_` = '{$groupName}' AND `TEXT_`= '{$groupValue}'))";
+        }
         if ($order && $by) {
             $sql .= " ORDER BY {$order} {$by}";
         }
 
         return $sql;
+    }
+
+    // 缓存
+    public static function cache($key, $value = null) {
+        $cacher = \Gini\Cache::of('default');
+        if (is_null($value)) {
+            return $cacher->get($key);
+        }
+
+        $conf = \Gini\Config::get('cache.default');
+        $cacheTime = @$config['timeout'];
+        $cacheTime = is_numeric($cacheTime) ? $cacheTime : 600;
+        $cacher->set($key, $value, $cacheTime);
     }
 }

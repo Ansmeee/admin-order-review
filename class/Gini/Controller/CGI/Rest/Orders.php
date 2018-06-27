@@ -202,15 +202,15 @@ class Orders extends Base\Index
         }
 
         $driver = \Gini\Process\Driver\Engine::of('bpm2');
-        $rdata  = $driver->searchInstances($searchInstanceParams);
+        $total  = $driver->getInstancesTotal($searchInstanceParams);
 
-        if (!$rdata['total']) {
+        if (!$total) {
             $response = $this->response(200, "获取成功", $data);
             return \Gini\IoC::construct('\Gini\CGI\Response\Json', $response);
         }
 
-        $instances = $driver->getInstances($rdata['token'], $start * $per_page, $per_page);
-        $data['total'] = $rdata['total'];
+        $instances = $driver->getInstances($searchInstanceParams, $start * $per_page, $per_page);
+        $data['total'] = $total ?: 0;
 
         foreach ($instances as $oinstance) {
             $instance = $engine->ProcessInstance($oinstance->id);
