@@ -202,7 +202,7 @@ class Orders extends Base\Index
         }
 
         $driver = \Gini\Process\Driver\Engine::of('bpm2');
-        $total  = $driver->getInstancesTotal($searchInstanceParams);
+        $total  = (int)$driver->getInstancesTotal($searchInstanceParams);
 
         if (!$total) {
             $response = $this->response(200, "获取成功", $data);
