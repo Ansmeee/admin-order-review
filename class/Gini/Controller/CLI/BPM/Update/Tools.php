@@ -283,7 +283,6 @@ class Tools extends \Gini\Controller\ClI
             $instances = Those('sjtu/bpm/process/instance')
                 ->Whose('process')->is($his_process)
                 ->andWhose('status')->is(\Gini\Process\IInstance::STATUS_END)
-                ->andWhose('id')->isGreaterThan(60000)
                 ->orderBy('id', 'asc')
                 ->limit($start, $perpage);
             $start += $perpage;
