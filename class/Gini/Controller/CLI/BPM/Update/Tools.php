@@ -174,10 +174,12 @@ class Tools extends \Gini\Controller\ClI
         echo "DONE \n";
     }
 
+
+    // 升级未结束的进程
     public function actionUpdateInstances()
     {
         $start = 0;
-        $perpage = 25;
+        $perpage = 100;
         $node = \Gini\Config::get('app.node');
 
         $his_process_name = 'order-review-process';
@@ -202,13 +204,22 @@ class Tools extends \Gini\Controller\ClI
                 $types = [];
                 foreach ($items as $item) {
                     $item = (array) $item;
+                    $products .= $item['name'].' ';
                     $casNO = $item['cas_no'];
-                    $chem_types = (array) \Gini\ChemDB\Client::getTypes($casNO)[$casNO];
-                    $types = array_unique(array_merge($types, $chem_types));
+                    if (!empty($casNO)) {
+                        $chem_types = \Gini\ChemDB\Client::getTypes($casNO)[$casNO];
+                    } else {
+                        $type = $item['type'];
+                        $types[] = $type;
+                    }
+                    $types = array_unique(array_merge($types, (array)$chem_types));
                 }
-                $cacheData['customized'] = $order_data['customized'] ? true : false;
-                $cacheData['chemicalTypes'] = $types;
 
+                $cacheData['customized'] = $order_data['customized'] ? true : false;
+                $cacheData['chemicalTypes'] = array_values($types);
+                $groupIDs[] = $node.'-'.$order_data['group_id'];
+                $cacheData['groupID'] = $groupIDs;
+                //设置 candidate_group
                 $key = "labmai-".$node."/".$order_data['group_id'];
                 $info = (array)\Gini\TagDB\Client::of('rpc')->get($key);
                 $cacheData['candidate_group'] = $info['organization']['school_code'];
@@ -216,12 +227,28 @@ class Tools extends \Gini\Controller\ClI
                 $steps = array_keys($conf['steps']);
                 foreach ($steps as $step) {
                     if ($step == 'school') continue;
-                    $cacheData[$step] = $step;
+                    $cacheData[$step] = $processName.'-'.$step;
                 }
-                $cacheData['key'] = $conf['name'];
+
+                $client['id']       = \Gini\Config::get('gapper.rpc')['client_id'];
+                $client['secret']   = \Gini\Config::get('gapper.rpc')['client_secret'];
+
+                $cacheData['key']           = $conf['name'];
+                $cacheData['voucher']       = $order_data['voucher'];
+                $cacheData['request_date']  = $order_data['request_date'];
+                $cacheData['customer']      = $order_data['customer']['name'];
+                $cacheData['requester']     = $order_data['requester_name'];
+                $cacheData['vendor']        = $order_data['vendor_name'];
+                $cacheData['products']      = $products;
+                $cacheData['types']         = implode(' ', $types);
+                $cacheData['status']        = 'active';
+                $cacheData['client']        = $client;
+
                 try {
                     $create_instance = $process->start($cacheData);
                     if ($create_instance->id) {
+                        $instance->is_updated = true;
+                        $instance->save();
                         echo $instance->id."--".$create_instance->id."--o\n";
                     }
                 } catch (\Gini\BPM\Exception $e) {
@@ -232,6 +259,7 @@ class Tools extends \Gini\Controller\ClI
 
         echo "DONE \n";
     }
+
 
     public function actionUpdateFinishedInstances()
     {
@@ -247,25 +275,57 @@ class Tools extends \Gini\Controller\ClI
         $engine = \Gini\BPM\Engine::of('order_review');
         $processName = $conf['name'];
         $process = $engine->process($processName);
+        $file = APP_PATH.'/'.DATA_DIR.'/update-instance.csv';
+        if (!file_exists($file)) return;
+        $source = fopen($file, 'a+');
+
         while (true) {
             $instances = Those('sjtu/bpm/process/instance')
                 ->Whose('process')->is($his_process)
                 ->andWhose('status')->is(\Gini\Process\IInstance::STATUS_END)
+                ->andWhose('id')->isGreaterThan(60000)
+                ->orderBy('id', 'asc')
                 ->limit($start, $perpage);
             $start += $perpage;
             if (!count($instances)) return;
             foreach ($instances as $instance) {
+                if ($instance->is_updated) continue;
                 $comment = [];
                 $cacheData = [];
-                $candidate_groups = [];
                 $order_data = $instance->data['data'];
                 $items = (array) json_decode($order_data['items']);
+
+                $types = [];
+                foreach ($items as $item) {
+                    $item = (array) $item;
+                    $products .= $item['name'].' ';
+                    $casNO = $item['cas_no'];
+                    if (!empty($casNO)) {
+                        $chem_types = []; // \Gini\ChemDB\Client::getTypes($casNO)[$casNO];
+                    } else {
+                        $type = $item['type'];
+                        $types[] = $type;
+                    }
+                    $types = array_unique(array_merge($types, (array)$chem_types));
+                }
+
                 $order_data['items'] = $items;
                 $cacheData['data'] = $order_data;
+
+                $key = "labmai-".$node."/".$order_data['group_id'];
+                $info = (array)\Gini\TagDB\Client::of('rpc')->get($key);
+                $cacheData['candidate_group'] = $info['organization']['school_code'];
+
                 $his_tasks = Those('sjtu/bpm/process/task')
                     ->Whose('instance')->is($instance)
                     ->orderBy('ctime', 'desc');
+
+                $status = 'approved';
                 foreach ($his_tasks as $his_task) {
+
+                    if ($his_task->status == 3) {
+                        $status = 'rejected';
+                    }
                     $com = [];
                     if ($his_task->user) {
                         $com = [
@@ -277,32 +337,39 @@ class Tools extends \Gini\Controller\ClI
                     }
 
                     $comment[] = $com;
-                    if ($his_task->candidate_group->id) {
-                        $candidate_groups[] = $conf['name'].'-'.$his_task->candidate_group->name;
-                    }
                 }
 
-                $cacheData['candidate_groups'] = implode(',', $candidate_groups);
-                $cacheData['comment'] = $comment;
-                $cacheData['key'] = $processName;
+                $cacheData['comment']       = $comment;
+                $cacheData['key']           = $processName;
+                $cacheData['voucher']       = $order_data['voucher'];
+                $cacheData['request_date']  = $order_data['request_date'];
+                $cacheData['customer']      = $order_data['customer']['name'];
+                $cacheData['requester']     = $order_data['requester_name'];
+                $cacheData['vendor']        = $order_data['vendor_name'];
+                $cacheData['types']         = implode(' ', $types);
+                $cacheData['status']        = $status;
+
+                $cacheData['customized'] = $order_data['customized'] ? true : false;
+                $cacheData['chemicalTypes'] = $types;
+
                 try {
                     $create_instance = $process->start($cacheData);
                     if ($create_instance->id) {
-                        $search_params['processInstance'] =  $create_instance->id;
-                        $result = $engine->searchTasks($search_params);
-                        $tasks = $engine->getTasks($result->token, 0, $result->total);
-                        $task = current($tasks);
-                        if (!$task->complete()) {
-                            echo ($start-100).'-'.$instance->id.'---'.$create_instance->id."---task---".$task->id."---x\n";
-                            continue;
-                        }
-                        echo ($start-100).'-'.$instance->id.'---'.$create_instance->id."---o\n";
+                        $instance->is_updated = true;
+                        $instance->save();
+                        echo $instance->id.'---'.$create_instance->id."---o\n";
+                        continue;
                     }
-                } catch (\Gini\BPM\Exception $e) {
-                   echo ($start-100).'-'.$instance->id."---x\n";
+                } catch (\Exception $e) {
+error_log(J($cacheData));
+                   $msg = J($e->getMessage());
+                   echo $instance->id."---x--, {$msg}\n";
                 }
+                $str = $instance->id."\n";
+                $bool = fwrite($source, $str);
             }
         }
+        @fclose($source);
 
         echo "DONE \n";
     }

@@ -95,7 +95,8 @@ class Debade extends \Gini\Controller\API
         $cacheData['customer']      = $data['customer']['name'];
         $cacheData['requester']     = $data['requester_name'];
         $cacheData['vendor']        = $data['vendor_name'];
-        $cacheData['products']      = $products;
+        // 商品名称太长会出问题
+        // $cacheData['products']      = $products;
         $cacheData['types']         = implode(' ', $types);
         $cacheData['status']        = 'active';
         $cacheData['client']        = $client;
