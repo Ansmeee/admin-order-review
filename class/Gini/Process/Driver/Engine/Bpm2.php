@@ -170,7 +170,7 @@ class Bpm2
         }
 
         // 没有查询条件
-        $sql = "SELECT `ID_` as id FROM `ACT_HI_PROCINST` USE INDEX (ACT_HI_PRO_START_TIME) WHERE `PROC_DEF_KEY_` = '{$criteria['key']}'";
+        $sql = "SELECT `ID_` as id FROM `ACT_HI_PROCINST` USE INDEX (ACT_IDX_HI_PRO_START_TIME) WHERE `PROC_DEF_KEY_` = '{$criteria['key']}'";
         if ($order && $by) {
             $sql .= " ORDER BY `{$order}` {$by}";
         }
@@ -194,7 +194,7 @@ class Bpm2
             $sql = "SELECT count(a.`ID_`) FROM `ACT_HI_PROCINST` as a left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE b.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
 
         } else {
-            $sql = "SELECT a.`ID_` as id FROM `ACT_HI_PROCINST` as a USE INDEX (ACT_HI_PRO_START_TIME) left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE b.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
+            $sql = "SELECT a.`ID_` as id FROM `ACT_HI_PROCINST` as a USE INDEX (ACT_IDX_HI_PRO_START_TIME) left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE b.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
             if ($order && $by) {
                 $sql .= " ORDER BY a.`{$order}` {$by}";
             }
@@ -215,7 +215,7 @@ class Bpm2
         if ($getTotal) {
             $sql = "SELECT count(a.`ID_`) FROM `ACT_HI_PROCINST` as a left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE b.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
         } else {
-            $sql = "SELECT a.`ID_` as id FROM `ACT_HI_PROCINST` as a USE INDEX (ACT_HI_PRO_START_TIME) left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE b.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
+            $sql = "SELECT a.`ID_` as id FROM `ACT_HI_PROCINST` as a USE INDEX (ACT_IDX_HI_PRO_START_TIME) left join `ACT_HI_VARINST` as b on a.`ID_`=b.`PROC_INST_ID_` WHERE b.`PROC_DEF_KEY_` = '{$key}' AND b.`NAME_` = '{$name}' AND b.`TEXT_`= '{$value}'";
             if ($order && $by) {
                 $sql .= " ORDER BY a.`{$order}` {$by}";
             }
@@ -238,7 +238,7 @@ class Bpm2
         if ($getTotal) {
             $sql = "SELECT count(`ID_`) FROM `ACT_HI_PROCINST` WHERE `ID_` IN (SELECT `PROC_INST_ID_` FROM `ACT_HI_VARINST` WHERE `PROC_DEF_KEY_` = '{$key}' AND `NAME_` = '{$statusName}' AND `TEXT_`= '{$statusValue}' AND `PROC_INST_ID_` IN (SELECT `PROC_INST_ID_` FROM `ACT_HI_VARINST` WHERE `PROC_DEF_KEY_` = '{$key}' AND `NAME_` = '{$groupName}' AND `TEXT_`= '{$groupValue}'))";
         } else {
-             $sql = "SELECT `ID_` as id FROM `ACT_HI_PROCINST` USE INDEX (ACT_HI_PRO_START_TIME) WHERE `ID_` IN (SELECT `PROC_INST_ID_` FROM `ACT_HI_VARINST` WHERE `PROC_DEF_KEY_` = '{$key}' AND `NAME_` = '{$statusName}' AND `TEXT_`= '{$statusValue}' AND `PROC_INST_ID_` IN (SELECT `PROC_INST_ID_` FROM `ACT_HI_VARINST` WHERE `PROC_DEF_KEY_` = '{$key}' AND `NAME_` = '{$groupName}' AND `TEXT_`= '{$groupValue}'))";
+             $sql = "SELECT `ID_` as id FROM `ACT_HI_PROCINST` USE INDEX (ACT_IDX_HI_PRO_START_TIME) WHERE `ID_` IN (SELECT `PROC_INST_ID_` FROM `ACT_HI_VARINST` WHERE `PROC_DEF_KEY_` = '{$key}' AND `NAME_` = '{$statusName}' AND `TEXT_`= '{$statusValue}' AND `PROC_INST_ID_` IN (SELECT `PROC_INST_ID_` FROM `ACT_HI_VARINST` WHERE `PROC_DEF_KEY_` = '{$key}' AND `NAME_` = '{$groupName}' AND `TEXT_`= '{$groupValue}'))";
             if ($order && $by) {
                 $sql .= " ORDER BY {$order} {$by}";
             }
