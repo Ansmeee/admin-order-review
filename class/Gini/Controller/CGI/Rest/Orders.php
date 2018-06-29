@@ -825,18 +825,27 @@ class Orders extends Base\Index
     private function _getCasNoTypes($cas_no)
     {
         $arr = [];
-        if ($vTypes=\Gini\ChemDB\Client::getTypes($cas_no)) {
-          foreach ($vTypes[$cas_no] as $value) {
-              $key = array_search($value, \Gini\ORM\Product::$rgt_types);
-              if (\Gini\ORM\Product::$rgt_titles[$key]) {
-                  $arr[] = [
-                      "type"  => $value,
-                      "title" => \Gini\ORM\Product::$rgt_titles[$key]
-                  ];
-              }
-          }
+        $cacheKey = "order-review-chem-types-{$cas_no}";
+        $vTypes = $this->cache($cacheKey);
+        if(!is_array($vTypes)) {
+            $types = \Gini\ChemDB\Client::getTypes($cas_no);
+            $vTypes = $types[$cas_no];
+            if (is_array($vTypes)) {
+                $this->cache($cacheKey, $vTypes, 3600);
+            }
         }
 
+        if (count($vTypes)) {
+            foreach ($vTypes as $value) {
+                $key = array_search($value, \Gini\ORM\Product::$rgt_types);
+                if (\Gini\ORM\Product::$rgt_titles[$key]) {
+                    $arr[] = [
+                        "type"  => $value,
+                        "title" => \Gini\ORM\Product::$rgt_titles[$key]
+                    ];
+                }
+            }
+        }
         return $arr;
     }
 
@@ -954,4 +963,15 @@ class Orders extends Base\Index
         return false;
     }
 
+    private function cache($key, $value = null, $timeOut = 900)
+    {
+        $cacher = \Gini\Cache::of('default');
+        if (is_null($value)) {
+            return $cacher->get($key);
+        }
+
+        $conf = \Gini\Config::get('cache.default');
+        $cacheTime = is_numeric($timeOut) ? $timeOut : 600;
+        $cacher->set($key, $value, $cacheTime);
+    }
 }
