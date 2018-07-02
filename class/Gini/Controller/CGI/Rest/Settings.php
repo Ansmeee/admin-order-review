@@ -528,7 +528,8 @@ class Settings extends Base\Index
 
         if ($conf) {
         // 获取 bpm 审批机构信息
-            foreach ($conf['steps'] as $code => $step) {
+            $steps = count($conf['steps']) ? $conf['steps'] : [];
+            foreach ($steps as $code => $step) {
                 if ($code === 'school') continue;
                 if (in_array($code, array_keys($extra))) continue;
                 $list[] = [
